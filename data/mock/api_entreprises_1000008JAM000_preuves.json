@@ -1,0 +1,71 @@
+{
+  "code_signal": "COH_CLIENTS_VS_CA",
+  "fait_fr": "5 clients déclarent 3,2 MD d'achats auprès de l'entreprise en 2025 ; CA déclaré 2025 : 0,2 MD.",
+  "lignes": [
+    {
+      "source": "employeur_annexe5",
+      "ref": "A5-2025-1000411KAM000-000001",
+      "date": "2026-03-31",
+      "libelle": "Annexe V 2025 — Sigma Distribution SARL déclare des achats auprès de Omega Négoce SUARL",
+      "montant": 760529.663,
+      "champs": {
+        "mf_payeur": "1000411KAM000",
+        "exercice": 2025,
+        "retenue_is": 11407.945,
+        "premiere_annee_relation": 2025
+      }
+    },
+    {
+      "source": "employeur_annexe5",
+      "ref": "A5-2025-1000412KAM000-000002",
+      "date": "2026-03-31",
+      "libelle": "Annexe V 2025 — Tau Matériaux SARL déclare des achats auprès de Omega Négoce SUARL",
+      "montant": 748581.753,
+      "champs": {
+        "mf_payeur": "1000412KAM000",
+        "exercice": 2025,
+        "retenue_is": 11228.726,
+        "premiere_annee_relation": 2025
+      }
+    },
+    {
+      "source": "employeur_annexe5",
+      "ref": "A5-2025-1000413KAM000-000003",
+      "date": "2026-03-31",
+      "libelle": "Annexe V 2025 — Upsilon Services SUARL déclare des achats auprès de Omega Négoce SUARL",
+      "montant": 642470.295,
+      "champs": {
+        "mf_payeur": "1000413KAM000",
+        "exercice": 2025,
+        "retenue_is": 9637.054,
+        "premiere_annee_relation": 2025
+      }
+    },
+    {
+      "source": "employeur_annexe5",
+      "ref": "A5-2025-1000414KAM000-000004",
+      "date": "2026-03-31",
+      "libelle": "Annexe V 2025 — Phi Équipements SARL déclare des achats auprès de Omega Négoce SUARL",
+      "montant": 708889.44,
+      "champs": {
+        "mf_payeur": "1000414KAM000",
+        "exercice": 2025,
+        "retenue_is": 10633.342,
+        "premiere_annee_relation": 2025
+      }
+    },
+    {
+      "source": "employeur_annexe5",
+      "ref": "A5-2025-1000415KAM000-000005",
+      "date": "2026-03-31",
+      "libelle": "Annexe V 2025 — Chi Commerce SARL déclare des achats auprès de Omega Négoce SUARL",
+      "montant": 477727.206,
+      "champs": {
+        "mf_payeur": "1000415KAM000",
+        "exercice": 2025,
+        "retenue_is": 7165.908,
+        "premiere_annee_relation": 2025
+      }
+    }
+  ]
+}

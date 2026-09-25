@@ -1,0 +1,62 @@
+{
+  "code_signal": "CHG_NOUVELLES_CATEGORIES",
+  "fait_fr": "Nouvelles catégories importées : chapitres 85 et 94.",
+  "lignes": [
+    {
+      "source": "douane_articles",
+      "ref": "2026/401/0063215-001",
+      "date": "2026-08-21",
+      "libelle": "NDP 84798997000 — Machines diverses — IT — FE00445",
+      "montant": 405788.218,
+      "champs": {
+        "pays_origine": "IT",
+        "quantite": 22,
+        "unite": "U",
+        "prix_unitaire_tnd": 18444.919,
+        "circuit": "O"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/401/0099105-002",
+      "date": "2026-07-22",
+      "libelle": "NDP 84798997001 — Machines diverses — IT — FE00534",
+      "montant": 482680.788,
+      "champs": {
+        "pays_origine": "IT",
+        "quantite": 31,
+        "unite": "U",
+        "prix_unitaire_tnd": 15570.348,
+        "circuit": "V"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/401/0060639-003",
+      "date": "2026-06-16",
+      "libelle": "NDP 84798997002 — Machines diverses — FR — FE00698",
+      "montant": 321695.198,
+      "champs": {
+        "pays_origine": "FR",
+        "quantite": 22,
+        "unite": "U",
+        "prix_unitaire_tnd": 14622.509,
+        "circuit": "V"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/401/0071076-004",
+      "date": "2026-05-25",
+      "libelle": "NDP 84798997003 — Machines diverses — IT — FE00459",
+      "montant": 355575.996,
+      "champs": {
+        "pays_origine": "IT",
+        "quantite": 18,
+        "unite": "U",
+        "prix_unitaire_tnd": 19754.222,
+        "circuit": "V"
+      }
+    }
+  ]
+}

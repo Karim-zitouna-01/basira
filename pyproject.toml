@@ -1,0 +1,30 @@
+[project]
+name = "basira"
+version = "0.1.0"
+description = "Basira — score de risque de conformité dynamique et explicable (lot C : scoring, évaluation, API, assistant)"
+authors = [
+    { name = "Zitouna Mohamed Karim", email = "karimzitouna01@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.141.1",
+    "numpy>=2.5.3",
+    "openai>=3.19.2",
+    "pandas>=3.0.6",
+    "pyarrow>=25.0.1",
+    "scikit-learn>=1.9.1",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+]

@@ -1,0 +1,333 @@
+{
+  "identite": {
+    "mf": "1000003DAM000",
+    "matricule_fiscal": "1000003/D/A/M/000",
+    "raison_sociale": "Gamma Travaux SA",
+    "forme_juridique": "SA",
+    "code_nat": "42.11",
+    "libelle_nat": "Construction de routes et autoroutes",
+    "gouvernorat": "Tunis",
+    "date_debut_activite": "2009-05-20",
+    "effectif": 64,
+    "statut_oea": false,
+    "centre_gestion": "DME"
+  },
+  "score": 82.0,
+  "segment": "PRIORITAIRE",
+  "confiance": 0.81,
+  "enjeu": {
+    "estime": 610000.0,
+    "bas": 470000.0,
+    "haut": 760000.0
+  },
+  "action_suggeree": "VERIFICATION",
+  "resume_fr": "840 000 DT reçus d'acheteurs publics sur 12 mois pour un CA déclaré de 610 000 DT. Enjeu estimé : 610 000 DT.",
+  "trajectoire": [
+    {
+      "mois": "2024-09",
+      "score": 28.1,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2024-10",
+      "score": 30.1,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2024-11",
+      "score": 31.4,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2024-12",
+      "score": 30.1,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-01",
+      "score": 32.3,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-02",
+      "score": 28.3,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-03",
+      "score": 31.7,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-04",
+      "score": 29.4,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-05",
+      "score": 29.6,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-06",
+      "score": 29.6,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-07",
+      "score": 27.9,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-08",
+      "score": 29.0,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-09",
+      "score": 29.2,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-10",
+      "score": 28.8,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-11",
+      "score": 31.0,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-12",
+      "score": 44.5,
+      "segment": "SURVEILLANCE"
+    },
+    {
+      "mois": "2026-01",
+      "score": 45.3,
+      "segment": "SURVEILLANCE"
+    },
+    {
+      "mois": "2026-02",
+      "score": 58.0,
+      "segment": "SURVEILLANCE"
+    },
+    {
+      "mois": "2026-03",
+      "score": 65.7,
+      "segment": "SURVEILLANCE"
+    },
+    {
+      "mois": "2026-04",
+      "score": 65.9,
+      "segment": "SURVEILLANCE"
+    },
+    {
+      "mois": "2026-05",
+      "score": 74.0,
+      "segment": "PRIORITAIRE"
+    },
+    {
+      "mois": "2026-06",
+      "score": 77.5,
+      "segment": "PRIORITAIRE"
+    },
+    {
+      "mois": "2026-07",
+      "score": 77.9,
+      "segment": "PRIORITAIRE"
+    },
+    {
+      "mois": "2026-08",
+      "score": 82.0,
+      "segment": "PRIORITAIRE"
+    }
+  ],
+  "contributions": [
+    {
+      "code_signal": "COH_ADEB_VS_CA",
+      "lentille": "COHERENCE",
+      "points": 41.7,
+      "valeur_norm": 1.0,
+      "fait_fr": "840 000 DT reçus d'acheteurs publics sur 12 mois, pour un CA déclaré de 610 000 DT.",
+      "sources": [
+        "adeb",
+        "dgi_declarations"
+      ],
+      "nb_preuves": 12
+    },
+    {
+      "code_signal": "PAI_MARGE",
+      "lentille": "PAIRS",
+      "points": 9.8,
+      "valeur_norm": 0.55,
+      "fait_fr": "Marge apparente de 4 % contre 15 % en médiane pour les pairs (42, 50+ salariés).",
+      "sources": [
+        "dgi_declarations"
+      ],
+      "nb_preuves": 12
+    }
+  ],
+  "pairs": {
+    "groupe": "42 × 50+ salariés",
+    "nb_pairs": 64,
+    "indicateurs": [
+      {
+        "nom": "Marge apparente",
+        "entreprise": 0.04,
+        "mediane_pairs": 0.15,
+        "p10": 0.07,
+        "p90": 0.22
+      }
+    ]
+  },
+  "series": [
+    {
+      "mois": "2024-09",
+      "ca_declare": 48287.554,
+      "imports_caf": 0.0,
+      "tva_deductible": 6885.726
+    },
+    {
+      "mois": "2024-10",
+      "ca_declare": 53257.328,
+      "imports_caf": 0.0,
+      "tva_deductible": 6150.735
+    },
+    {
+      "mois": "2024-11",
+      "ca_declare": 54239.231,
+      "imports_caf": 0.0,
+      "tva_deductible": 6689.383
+    },
+    {
+      "mois": "2024-12",
+      "ca_declare": 50343.138,
+      "imports_caf": 0.0,
+      "tva_deductible": 6954.341
+    },
+    {
+      "mois": "2025-01",
+      "ca_declare": 52216.649,
+      "imports_caf": 0.0,
+      "tva_deductible": 6307.535
+    },
+    {
+      "mois": "2025-02",
+      "ca_declare": 48549.26,
+      "imports_caf": 0.0,
+      "tva_deductible": 6594.032
+    },
+    {
+      "mois": "2025-03",
+      "ca_declare": 51274.024,
+      "imports_caf": 0.0,
+      "tva_deductible": 6780.816
+    },
+    {
+      "mois": "2025-04",
+      "ca_declare": 51398.41,
+      "imports_caf": 0.0,
+      "tva_deductible": 6128.766
+    },
+    {
+      "mois": "2025-05",
+      "ca_declare": 49534.159,
+      "imports_caf": 0.0,
+      "tva_deductible": 6572.454
+    },
+    {
+      "mois": "2025-06",
+      "ca_declare": 48154.394,
+      "imports_caf": 0.0,
+      "tva_deductible": 7091.338
+    },
+    {
+      "mois": "2025-07",
+      "ca_declare": 48652.904,
+      "imports_caf": 0.0,
+      "tva_deductible": 6836.847
+    },
+    {
+      "mois": "2025-08",
+      "ca_declare": 52587.638,
+      "imports_caf": 0.0,
+      "tva_deductible": 6669.112
+    },
+    {
+      "mois": "2025-09",
+      "ca_declare": 51047.315,
+      "imports_caf": 0.0,
+      "tva_deductible": 6938.609
+    },
+    {
+      "mois": "2025-10",
+      "ca_declare": 49507.998,
+      "imports_caf": 0.0,
+      "tva_deductible": 6189.116
+    },
+    {
+      "mois": "2025-11",
+      "ca_declare": 47878.957,
+      "imports_caf": 0.0,
+      "tva_deductible": 7017.47
+    },
+    {
+      "mois": "2025-12",
+      "ca_declare": 52976.204,
+      "imports_caf": 0.0,
+      "tva_deductible": 5870.059
+    },
+    {
+      "mois": "2026-01",
+      "ca_declare": 48118.652,
+      "imports_caf": 0.0,
+      "tva_deductible": 6009.926
+    },
+    {
+      "mois": "2026-02",
+      "ca_declare": 52326.801,
+      "imports_caf": 0.0,
+      "tva_deductible": 7066.944
+    },
+    {
+      "mois": "2026-03",
+      "ca_declare": 49931.191,
+      "imports_caf": 0.0,
+      "tva_deductible": 6639.432
+    },
+    {
+      "mois": "2026-04",
+      "ca_declare": 52104.68,
+      "imports_caf": 0.0,
+      "tva_deductible": 7052.167
+    },
+    {
+      "mois": "2026-05",
+      "ca_declare": 49686.695,
+      "imports_caf": 0.0,
+      "tva_deductible": 6451.471
+    },
+    {
+      "mois": "2026-06",
+      "ca_declare": 54420.861,
+      "imports_caf": 0.0,
+      "tva_deductible": 6742.403
+    },
+    {
+      "mois": "2026-07",
+      "ca_declare": 53579.687,
+      "imports_caf": 0.0,
+      "tva_deductible": 7050.852
+    },
+    {
+      "mois": "2026-08",
+      "ca_declare": 50207.798,
+      "imports_caf": 0.0,
+      "tva_deductible": 6313.213
+    }
+  ],
+  "decisions": [],
+  "controles_passes": []
+}

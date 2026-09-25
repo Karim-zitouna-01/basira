@@ -1,0 +1,138 @@
+{
+  "code_signal": "PAI_MARGE",
+  "fait_fr": "Marge apparente de 3 % contre 22 % en médiane pour les pairs (14, 10–49 salariés).",
+  "lignes": [
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000005FAM000:2026-08",
+      "date": "2026-08-28",
+      "libelle": "Déclaration mensuelle 2026-08",
+      "montant": 174144.251,
+      "champs": {
+        "ca_total_declare": 174144.251,
+        "tva_deductible_biens_services_local": 20244.145
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000005FAM000:2026-07",
+      "date": "2026-07-28",
+      "libelle": "Déclaration mensuelle 2026-07",
+      "montant": 186124.34,
+      "champs": {
+        "ca_total_declare": 186124.34,
+        "tva_deductible_biens_services_local": 19435.853
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000005FAM000:2026-06",
+      "date": "2026-06-28",
+      "libelle": "Déclaration mensuelle 2026-06",
+      "montant": 187641.642,
+      "champs": {
+        "ca_total_declare": 187641.642,
+        "tva_deductible_biens_services_local": 19548.39
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000005FAM000:2026-05",
+      "date": "2026-05-28",
+      "libelle": "Déclaration mensuelle 2026-05",
+      "montant": 176183.374,
+      "champs": {
+        "ca_total_declare": 176183.374,
+        "tva_deductible_biens_services_local": 20620.74
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000005FAM000:2026-04",
+      "date": "2026-04-28",
+      "libelle": "Déclaration mensuelle 2026-04",
+      "montant": 187720.718,
+      "champs": {
+        "ca_total_declare": 187720.718,
+        "tva_deductible_biens_services_local": 21794.477
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000005FAM000:2026-03",
+      "date": "2026-03-28",
+      "libelle": "Déclaration mensuelle 2026-03",
+      "montant": 189002.734,
+      "champs": {
+        "ca_total_declare": 189002.734,
+        "tva_deductible_biens_services_local": 19642.322
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000005FAM000:2026-08",
+      "date": "2026-08-28",
+      "libelle": "Déclaration mensuelle 2026-08",
+      "montant": 174144.251,
+      "champs": {
+        "ca_total_declare": 174144.251,
+        "tva_deductible_biens_services_local": 20244.145
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000005FAM000:2026-07",
+      "date": "2026-07-28",
+      "libelle": "Déclaration mensuelle 2026-07",
+      "montant": 186124.34,
+      "champs": {
+        "ca_total_declare": 186124.34,
+        "tva_deductible_biens_services_local": 19435.853
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000005FAM000:2026-06",
+      "date": "2026-06-28",
+      "libelle": "Déclaration mensuelle 2026-06",
+      "montant": 187641.642,
+      "champs": {
+        "ca_total_declare": 187641.642,
+        "tva_deductible_biens_services_local": 19548.39
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000005FAM000:2026-05",
+      "date": "2026-05-28",
+      "libelle": "Déclaration mensuelle 2026-05",
+      "montant": 176183.374,
+      "champs": {
+        "ca_total_declare": 176183.374,
+        "tva_deductible_biens_services_local": 20620.74
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000005FAM000:2026-04",
+      "date": "2026-04-28",
+      "libelle": "Déclaration mensuelle 2026-04",
+      "montant": 187720.718,
+      "champs": {
+        "ca_total_declare": 187720.718,
+        "tva_deductible_biens_services_local": 21794.477
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000005FAM000:2026-03",
+      "date": "2026-03-28",
+      "libelle": "Déclaration mensuelle 2026-03",
+      "montant": 189002.734,
+      "champs": {
+        "ca_total_declare": 189002.734,
+        "tva_deductible_biens_services_local": 19642.322
+      }
+    }
+  ]
+}

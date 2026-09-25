@@ -1,0 +1,14 @@
+{
+  "reponse": "Le score est passé de 28 à 76 en deux mois pour trois raisons principales : …",
+  "citations": [
+    {
+      "type": "signal",
+      "ref": "COH_IMPORT_VS_CA"
+    },
+    {
+      "type": "preuve",
+      "ref": "douane_articles:2026/401/0034567-001"
+    }
+  ],
+  "mode": "llm"
+}

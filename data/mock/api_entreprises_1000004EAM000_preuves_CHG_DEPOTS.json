@@ -1,0 +1,72 @@
+{
+  "code_signal": "CHG_DEPOTS",
+  "fait_fr": "4 déclarations mensuelles sur 6 non déposées ou en retard.",
+  "lignes": [
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000004EAM000:2026-08",
+      "date": "2026-08-28",
+      "libelle": "Déclaration mensuelle 2026-08",
+      "montant": 3500.0,
+      "champs": {
+        "statut_depot": "DEPOSEE",
+        "jours_retard": 61
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000004EAM000:2026-07",
+      "date": "2026-07-28",
+      "libelle": "Déclaration mensuelle 2026-07",
+      "montant": 3500.0,
+      "champs": {
+        "statut_depot": "NON_DEPOSEE",
+        "jours_retard": 0
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000004EAM000:2026-06",
+      "date": "2026-06-28",
+      "libelle": "Déclaration mensuelle 2026-06",
+      "montant": 3500.0,
+      "champs": {
+        "statut_depot": "DEPOSEE",
+        "jours_retard": 78
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000004EAM000:2026-05",
+      "date": "2026-05-28",
+      "libelle": "Déclaration mensuelle 2026-05",
+      "montant": 4187.634,
+      "champs": {
+        "statut_depot": "NON_DEPOSEE",
+        "jours_retard": 0
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000004EAM000:2026-04",
+      "date": "2026-04-28",
+      "libelle": "Déclaration mensuelle 2026-04",
+      "montant": 4220.527,
+      "champs": {
+        "statut_depot": "DEPOSEE",
+        "jours_retard": 47
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000004EAM000:2026-03",
+      "date": "2026-03-28",
+      "libelle": "Déclaration mensuelle 2026-03",
+      "montant": 3825.225,
+      "champs": {
+        "statut_depot": "NON_DEPOSEE",
+        "jours_retard": 0
+      }
+    }
+  ]
+}

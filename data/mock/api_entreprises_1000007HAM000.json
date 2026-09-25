@@ -1,0 +1,318 @@
+{
+  "identite": {
+    "mf": "1000007HAM000",
+    "matricule_fiscal": "1000007/H/A/M/000",
+    "raison_sociale": "Eta Pharma SA",
+    "forme_juridique": "SA",
+    "code_nat": "46.46",
+    "libelle_nat": "Commerce de gros de produits pharmaceutiques",
+    "gouvernorat": "Ariana",
+    "date_debut_activite": "2005-10-03",
+    "effectif": 85,
+    "statut_oea": true,
+    "centre_gestion": "DGE"
+  },
+  "score": 6.1,
+  "segment": "CONFIANCE",
+  "confiance": 0.95,
+  "enjeu": {
+    "estime": 0.0,
+    "bas": 0.0,
+    "haut": 5000.0
+  },
+  "action_suggeree": "AUCUNE",
+  "resume_fr": "Dépôts à l'heure depuis 36 mois, déclarations cohérentes avec la douane, contrôle 2025 conforme, opérateur OEA. Candidat à la facilitation.",
+  "trajectoire": [
+    {
+      "mois": "2024-09",
+      "score": 5.0,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2024-10",
+      "score": 5.9,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2024-11",
+      "score": 4.0,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2024-12",
+      "score": 6.0,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2025-01",
+      "score": 6.1,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2025-02",
+      "score": 5.1,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2025-03",
+      "score": 5.1,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2025-04",
+      "score": 5.2,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2025-05",
+      "score": 4.4,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2025-06",
+      "score": 8.4,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2025-07",
+      "score": 7.8,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2025-08",
+      "score": 4.4,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2025-09",
+      "score": 4.8,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2025-10",
+      "score": 8.2,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2025-11",
+      "score": 7.9,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2025-12",
+      "score": 6.1,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2026-01",
+      "score": 5.4,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2026-02",
+      "score": 4.0,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2026-03",
+      "score": 6.5,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2026-04",
+      "score": 4.6,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2026-05",
+      "score": 5.8,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2026-06",
+      "score": 4.5,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2026-07",
+      "score": 6.0,
+      "segment": "CONFIANCE"
+    },
+    {
+      "mois": "2026-08",
+      "score": 6.1,
+      "segment": "CONFIANCE"
+    }
+  ],
+  "contributions": [],
+  "pairs": {
+    "groupe": "46 × 50+ salariés",
+    "nb_pairs": 71,
+    "indicateurs": [
+      {
+        "nom": "Marge apparente",
+        "entreprise": 0.29,
+        "mediane_pairs": 0.27,
+        "p10": 0.15,
+        "p90": 0.36
+      }
+    ]
+  },
+  "series": [
+    {
+      "mois": "2024-09",
+      "ca_declare": 1402681.573,
+      "imports_caf": 761253.107,
+      "tva_deductible": 152661.852
+    },
+    {
+      "mois": "2024-10",
+      "ca_declare": 1473266.319,
+      "imports_caf": 697602.549,
+      "tva_deductible": 161884.397
+    },
+    {
+      "mois": "2024-11",
+      "ca_declare": 1466754.508,
+      "imports_caf": 663409.726,
+      "tva_deductible": 175910.13
+    },
+    {
+      "mois": "2024-12",
+      "ca_declare": 1378832.406,
+      "imports_caf": 724199.702,
+      "tva_deductible": 161251.0
+    },
+    {
+      "mois": "2025-01",
+      "ca_declare": 1331790.586,
+      "imports_caf": 710774.848,
+      "tva_deductible": 175352.012
+    },
+    {
+      "mois": "2025-02",
+      "ca_declare": 1444833.449,
+      "imports_caf": 622563.903,
+      "tva_deductible": 170108.429
+    },
+    {
+      "mois": "2025-03",
+      "ca_declare": 1430768.469,
+      "imports_caf": 607826.354,
+      "tva_deductible": 165332.596
+    },
+    {
+      "mois": "2025-04",
+      "ca_declare": 1308766.677,
+      "imports_caf": 760797.358,
+      "tva_deductible": 174111.125
+    },
+    {
+      "mois": "2025-05",
+      "ca_declare": 1337081.319,
+      "imports_caf": 651187.294,
+      "tva_deductible": 161290.214
+    },
+    {
+      "mois": "2025-06",
+      "ca_declare": 1371903.567,
+      "imports_caf": 691031.778,
+      "tva_deductible": 149970.306
+    },
+    {
+      "mois": "2025-07",
+      "ca_declare": 1312513.986,
+      "imports_caf": 633983.174,
+      "tva_deductible": 148924.751
+    },
+    {
+      "mois": "2025-08",
+      "ca_declare": 1427680.123,
+      "imports_caf": 697845.883,
+      "tva_deductible": 161474.253
+    },
+    {
+      "mois": "2025-09",
+      "ca_declare": 1307685.891,
+      "imports_caf": 641396.675,
+      "tva_deductible": 155653.017
+    },
+    {
+      "mois": "2025-10",
+      "ca_declare": 1408378.197,
+      "imports_caf": 692784.368,
+      "tva_deductible": 167908.713
+    },
+    {
+      "mois": "2025-11",
+      "ca_declare": 1332383.515,
+      "imports_caf": 663145.703,
+      "tva_deductible": 166874.144
+    },
+    {
+      "mois": "2025-12",
+      "ca_declare": 1309893.508,
+      "imports_caf": 596588.584,
+      "tva_deductible": 147028.993
+    },
+    {
+      "mois": "2026-01",
+      "ca_declare": 1416857.947,
+      "imports_caf": 742974.885,
+      "tva_deductible": 170030.592
+    },
+    {
+      "mois": "2026-02",
+      "ca_declare": 1352416.629,
+      "imports_caf": 753918.998,
+      "tva_deductible": 149241.933
+    },
+    {
+      "mois": "2026-03",
+      "ca_declare": 1339500.08,
+      "imports_caf": 766455.431,
+      "tva_deductible": 157530.885
+    },
+    {
+      "mois": "2026-04",
+      "ca_declare": 1386893.872,
+      "imports_caf": 769952.07,
+      "tva_deductible": 149461.411
+    },
+    {
+      "mois": "2026-05",
+      "ca_declare": 1346031.989,
+      "imports_caf": 798264.68,
+      "tva_deductible": 150806.837
+    },
+    {
+      "mois": "2026-06",
+      "ca_declare": 1333068.564,
+      "imports_caf": 803291.342,
+      "tva_deductible": 157503.137
+    },
+    {
+      "mois": "2026-07",
+      "ca_declare": 1384942.794,
+      "imports_caf": 774795.232,
+      "tva_deductible": 166561.356
+    },
+    {
+      "mois": "2026-08",
+      "ca_declare": 1491812.379,
+      "imports_caf": 727162.726,
+      "tva_deductible": 158095.252
+    }
+  ],
+  "decisions": [],
+  "controles_passes": [
+    {
+      "id_controle": "CTL-2025-000041",
+      "date_avis": "2025-03-04",
+      "type_controle": "VERIF_PRELIMINAIRE",
+      "origine_selection": "ALEATOIRE",
+      "categorie_resultat": "CONFORME",
+      "montant_redresse_total": 0.0
+    }
+  ]
+}

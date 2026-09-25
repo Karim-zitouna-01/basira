@@ -1,0 +1,345 @@
+{
+  "identite": {
+    "mf": "1000008JAM000",
+    "matricule_fiscal": "1000008/J/A/M/000",
+    "raison_sociale": "Omega Négoce SUARL",
+    "forme_juridique": "SUARL",
+    "code_nat": "46.90",
+    "libelle_nat": "Commerce de gros non spécialisé",
+    "gouvernorat": "Tunis",
+    "date_debut_activite": "2024-11-18",
+    "effectif": 0,
+    "statut_oea": false,
+    "centre_gestion": "CRCI"
+  },
+  "score": 89.0,
+  "segment": "PRIORITAIRE",
+  "confiance": 0.77,
+  "enjeu": {
+    "estime": 640000.0,
+    "bas": 450000.0,
+    "haut": 830000.0
+  },
+  "action_suggeree": "VERIFICATION",
+  "resume_fr": "5 clients déclarent 3,2 MD d'achats auprès de l'entreprise en 2025 ; CA déclaré 2025 : 0,2 MD, aucun salarié. Enjeu estimé : 640 000 DT.",
+  "trajectoire": [
+    {
+      "mois": "2024-09",
+      "score": 31.2,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2024-10",
+      "score": 29.5,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2024-11",
+      "score": 27.0,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2024-12",
+      "score": 31.0,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-01",
+      "score": 30.2,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-02",
+      "score": 27.1,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-03",
+      "score": 30.0,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-04",
+      "score": 44.7,
+      "segment": "SURVEILLANCE"
+    },
+    {
+      "mois": "2025-05",
+      "score": 46.6,
+      "segment": "SURVEILLANCE"
+    },
+    {
+      "mois": "2025-06",
+      "score": 62.0,
+      "segment": "SURVEILLANCE"
+    },
+    {
+      "mois": "2025-07",
+      "score": 73.4,
+      "segment": "PRIORITAIRE"
+    },
+    {
+      "mois": "2025-08",
+      "score": 72.0,
+      "segment": "PRIORITAIRE"
+    },
+    {
+      "mois": "2025-09",
+      "score": 72.0,
+      "segment": "PRIORITAIRE"
+    },
+    {
+      "mois": "2025-10",
+      "score": 73.4,
+      "segment": "PRIORITAIRE"
+    },
+    {
+      "mois": "2025-11",
+      "score": 72.1,
+      "segment": "PRIORITAIRE"
+    },
+    {
+      "mois": "2025-12",
+      "score": 74.3,
+      "segment": "PRIORITAIRE"
+    },
+    {
+      "mois": "2026-01",
+      "score": 74.4,
+      "segment": "PRIORITAIRE"
+    },
+    {
+      "mois": "2026-02",
+      "score": 71.6,
+      "segment": "PRIORITAIRE"
+    },
+    {
+      "mois": "2026-03",
+      "score": 84.0,
+      "segment": "PRIORITAIRE"
+    },
+    {
+      "mois": "2026-04",
+      "score": 87.9,
+      "segment": "PRIORITAIRE"
+    },
+    {
+      "mois": "2026-05",
+      "score": 86.9,
+      "segment": "PRIORITAIRE"
+    },
+    {
+      "mois": "2026-06",
+      "score": 87.7,
+      "segment": "PRIORITAIRE"
+    },
+    {
+      "mois": "2026-07",
+      "score": 87.4,
+      "segment": "PRIORITAIRE"
+    },
+    {
+      "mois": "2026-08",
+      "score": 89.0,
+      "segment": "PRIORITAIRE"
+    }
+  ],
+  "contributions": [
+    {
+      "code_signal": "COH_CLIENTS_VS_CA",
+      "lentille": "COHERENCE",
+      "points": 45.5,
+      "valeur_norm": 1.0,
+      "fait_fr": "5 clients déclarent 3,2 MD d'achats auprès de l'entreprise en 2025 ; CA déclaré 2025 : 0,2 MD.",
+      "sources": [
+        "dgi_annexe5",
+        "dgi_declarations"
+      ],
+      "nb_preuves": 5
+    },
+    {
+      "code_signal": "PAI_MAHALANOBIS",
+      "lentille": "PAIRS",
+      "points": 12.0,
+      "valeur_norm": 0.8,
+      "fait_fr": "Profil atypique pour son secteur, surtout le CA par salarié (aucun salarié déclaré).",
+      "sources": [
+        "dgi_declarations"
+      ],
+      "nb_preuves": 12
+    },
+    {
+      "code_signal": "RES_FOURNISSEUR_PARTAGE",
+      "lentille": "RESEAU",
+      "points": 10.4,
+      "valeur_norm": 1.0,
+      "fait_fr": "Ses 5 clients ont commencé à lui acheter la même année, avec d'autres fournisseurs sans salarié.",
+      "sources": [
+        "graphe",
+        "dgi_annexe5"
+      ],
+      "nb_preuves": 5
+    }
+  ],
+  "pairs": {
+    "groupe": "46 × 0–2 salariés",
+    "nb_pairs": 912,
+    "indicateurs": [
+      {
+        "nom": "CA par salarié",
+        "entreprise": null,
+        "mediane_pairs": 95000.0,
+        "p10": 30000.0,
+        "p90": 240000.0
+      }
+    ]
+  },
+  "series": [
+    {
+      "mois": "2024-09",
+      "ca_declare": 16493.338,
+      "imports_caf": 0.0,
+      "tva_deductible": 2254.761
+    },
+    {
+      "mois": "2024-10",
+      "ca_declare": 17050.022,
+      "imports_caf": 0.0,
+      "tva_deductible": 2670.234
+    },
+    {
+      "mois": "2024-11",
+      "ca_declare": 16971.848,
+      "imports_caf": 0.0,
+      "tva_deductible": 2646.666
+    },
+    {
+      "mois": "2024-12",
+      "ca_declare": 17141.959,
+      "imports_caf": 0.0,
+      "tva_deductible": 2478.008
+    },
+    {
+      "mois": "2025-01",
+      "ca_declare": 17258.328,
+      "imports_caf": 0.0,
+      "tva_deductible": 2715.365
+    },
+    {
+      "mois": "2025-02",
+      "ca_declare": 17404.651,
+      "imports_caf": 0.0,
+      "tva_deductible": 2377.428
+    },
+    {
+      "mois": "2025-03",
+      "ca_declare": 17433.229,
+      "imports_caf": 0.0,
+      "tva_deductible": 2422.971
+    },
+    {
+      "mois": "2025-04",
+      "ca_declare": 17775.767,
+      "imports_caf": 0.0,
+      "tva_deductible": 2515.156
+    },
+    {
+      "mois": "2025-05",
+      "ca_declare": 16043.981,
+      "imports_caf": 0.0,
+      "tva_deductible": 2268.615
+    },
+    {
+      "mois": "2025-06",
+      "ca_declare": 17214.696,
+      "imports_caf": 0.0,
+      "tva_deductible": 2711.281
+    },
+    {
+      "mois": "2025-07",
+      "ca_declare": 17153.22,
+      "imports_caf": 0.0,
+      "tva_deductible": 2572.735
+    },
+    {
+      "mois": "2025-08",
+      "ca_declare": 17178.444,
+      "imports_caf": 0.0,
+      "tva_deductible": 2489.315
+    },
+    {
+      "mois": "2025-09",
+      "ca_declare": 15862.28,
+      "imports_caf": 0.0,
+      "tva_deductible": 2317.16
+    },
+    {
+      "mois": "2025-10",
+      "ca_declare": 16060.264,
+      "imports_caf": 0.0,
+      "tva_deductible": 2517.384
+    },
+    {
+      "mois": "2025-11",
+      "ca_declare": 16416.777,
+      "imports_caf": 0.0,
+      "tva_deductible": 2624.465
+    },
+    {
+      "mois": "2025-12",
+      "ca_declare": 15979.278,
+      "imports_caf": 0.0,
+      "tva_deductible": 2309.837
+    },
+    {
+      "mois": "2026-01",
+      "ca_declare": 18104.041,
+      "imports_caf": 0.0,
+      "tva_deductible": 2608.618
+    },
+    {
+      "mois": "2026-02",
+      "ca_declare": 16540.738,
+      "imports_caf": 0.0,
+      "tva_deductible": 2411.127
+    },
+    {
+      "mois": "2026-03",
+      "ca_declare": 17944.031,
+      "imports_caf": 0.0,
+      "tva_deductible": 2450.019
+    },
+    {
+      "mois": "2026-04",
+      "ca_declare": 17033.528,
+      "imports_caf": 0.0,
+      "tva_deductible": 2459.434
+    },
+    {
+      "mois": "2026-05",
+      "ca_declare": 16973.711,
+      "imports_caf": 0.0,
+      "tva_deductible": 2469.261
+    },
+    {
+      "mois": "2026-06",
+      "ca_declare": 17639.714,
+      "imports_caf": 0.0,
+      "tva_deductible": 2545.276
+    },
+    {
+      "mois": "2026-07",
+      "ca_declare": 16959.152,
+      "imports_caf": 0.0,
+      "tva_deductible": 2722.719
+    },
+    {
+      "mois": "2026-08",
+      "ca_declare": 16725.636,
+      "imports_caf": 0.0,
+      "tva_deductible": 2482.711
+    }
+  ],
+  "decisions": [],
+  "controles_passes": []
+}

@@ -1,0 +1,72 @@
+{
+  "code_signal": "PAI_MAHALANOBIS",
+  "fait_fr": "Profil atypique pour son secteur, surtout le ratio imports / CA (1,4 contre 0,5).",
+  "lignes": [
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000002CAM000:2026-08",
+      "date": "2026-08-28",
+      "libelle": "Déclaration mensuelle 2026-08",
+      "montant": 200842.761,
+      "champs": {
+        "ca_total_declare": 200842.761,
+        "tva_deductible_biens_services_local": 9680.07
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000002CAM000:2026-07",
+      "date": "2026-07-28",
+      "libelle": "Déclaration mensuelle 2026-07",
+      "montant": 219966.021,
+      "champs": {
+        "ca_total_declare": 219966.021,
+        "tva_deductible_biens_services_local": 9458.477
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000002CAM000:2026-06",
+      "date": "2026-06-28",
+      "libelle": "Déclaration mensuelle 2026-06",
+      "montant": 222390.79,
+      "champs": {
+        "ca_total_declare": 222390.79,
+        "tva_deductible_biens_services_local": 9080.58
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000002CAM000:2026-05",
+      "date": "2026-05-28",
+      "libelle": "Déclaration mensuelle 2026-05",
+      "montant": 197343.549,
+      "champs": {
+        "ca_total_declare": 197343.549,
+        "tva_deductible_biens_services_local": 8451.889
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000002CAM000:2026-04",
+      "date": "2026-04-28",
+      "libelle": "Déclaration mensuelle 2026-04",
+      "montant": 205190.715,
+      "champs": {
+        "ca_total_declare": 205190.715,
+        "tva_deductible_biens_services_local": 9321.297
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000002CAM000:2026-03",
+      "date": "2026-03-28",
+      "libelle": "Déclaration mensuelle 2026-03",
+      "montant": 199824.383,
+      "champs": {
+        "ca_total_declare": 199824.383,
+        "tva_deductible_biens_services_local": 8880.494
+      }
+    }
+  ]
+}

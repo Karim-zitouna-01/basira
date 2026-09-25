@@ -1,0 +1,118 @@
+{
+  "code_signal": "CHG_IMPORTS",
+  "fait_fr": "Importations ×2,6 par rapport à la moyenne des 12 derniers mois.",
+  "lignes": [
+    {
+      "source": "douane_articles",
+      "ref": "2026/402/0012725-001",
+      "date": "2026-08-22",
+      "libelle": "NDP 84798997000 — Machines diverses — IT — FE00637",
+      "montant": 482935.92,
+      "champs": {
+        "pays_origine": "IT",
+        "quantite": 24,
+        "unite": "U",
+        "prix_unitaire_tnd": 20122.33,
+        "circuit": "O"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/301/0096444-002",
+      "date": "2026-07-15",
+      "libelle": "NDP 84798997001 — Machines diverses — IT — FE00576",
+      "montant": 81971.775,
+      "champs": {
+        "pays_origine": "IT",
+        "quantite": 5,
+        "unite": "U",
+        "prix_unitaire_tnd": 16394.355,
+        "circuit": "V"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/401/0025445-003",
+      "date": "2026-06-17",
+      "libelle": "NDP 84798997002 — Machines diverses — FR — FE00513",
+      "montant": 162915.696,
+      "champs": {
+        "pays_origine": "FR",
+        "quantite": 9,
+        "unite": "U",
+        "prix_unitaire_tnd": 18101.744,
+        "circuit": "V"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/401/0099780-004",
+      "date": "2026-05-09",
+      "libelle": "NDP 84798997003 — Machines diverses — FR — FE00532",
+      "montant": 263245.296,
+      "champs": {
+        "pays_origine": "FR",
+        "quantite": 16,
+        "unite": "U",
+        "prix_unitaire_tnd": 16452.831,
+        "circuit": "V"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/301/0061610-005",
+      "date": "2026-04-02",
+      "libelle": "NDP 84798997004 — Machines diverses — CN — FE00224",
+      "montant": 74936.524,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 4,
+        "unite": "U",
+        "prix_unitaire_tnd": 18734.131,
+        "circuit": "V"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/401/0066465-006",
+      "date": "2026-03-27",
+      "libelle": "NDP 84798997005 — Machines diverses — FR — FE00758",
+      "montant": 205303.76,
+      "champs": {
+        "pays_origine": "FR",
+        "quantite": 10,
+        "unite": "U",
+        "prix_unitaire_tnd": 20530.376,
+        "circuit": "V"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/401/0059270-007",
+      "date": "2026-08-11",
+      "libelle": "NDP 84798997006 — Machines diverses — TR — FE00532",
+      "montant": 414827.339,
+      "champs": {
+        "pays_origine": "TR",
+        "quantite": 29,
+        "unite": "U",
+        "prix_unitaire_tnd": 14304.391,
+        "circuit": "V"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/401/0041296-008",
+      "date": "2026-07-13",
+      "libelle": "NDP 84798997007 — Machines diverses — CN — FE00320",
+      "montant": 560036.24,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 40,
+        "unite": "U",
+        "prix_unitaire_tnd": 14000.906,
+        "circuit": "V"
+      }
+    }
+  ]
+}

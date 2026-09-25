@@ -1,0 +1,110 @@
+{
+  "noeuds": [
+    {
+      "id": "1000001BAM000",
+      "label": "Alpha SARL",
+      "type": "ENTREPRISE",
+      "segment": "PRIORITAIRE",
+      "est_coquille": false,
+      "centre": true
+    },
+    {
+      "id": "FE00231",
+      "label": "Shenzhen Tools Co.",
+      "type": "FOURNISSEUR_ETRANGER",
+      "segment": null,
+      "est_coquille": false,
+      "centre": false
+    },
+    {
+      "id": "1000311KAM000",
+      "label": "Kappa Equipements SARL",
+      "type": "ENTREPRISE",
+      "segment": "PRIORITAIRE",
+      "est_coquille": false,
+      "centre": false
+    },
+    {
+      "id": "1000312KAM000",
+      "label": "Lambda Import SARL",
+      "type": "ENTREPRISE",
+      "segment": "PRIORITAIRE",
+      "est_coquille": false,
+      "centre": false
+    },
+    {
+      "id": "1000313KAM000",
+      "label": "Mu Outillage SUARL",
+      "type": "ENTREPRISE",
+      "segment": "SURVEILLANCE",
+      "est_coquille": false,
+      "centre": false
+    },
+    {
+      "id": "1000314KAM000",
+      "label": "Nu Machines SARL",
+      "type": "ENTREPRISE",
+      "segment": "SURVEILLANCE",
+      "est_coquille": false,
+      "centre": false
+    },
+    {
+      "id": "FE00088",
+      "label": "Milano Meccanica SpA",
+      "type": "FOURNISSEUR_ETRANGER",
+      "segment": null,
+      "est_coquille": false,
+      "centre": false
+    }
+  ],
+  "aretes": [
+    {
+      "source": "1000001BAM000",
+      "cible": "FE00231",
+      "type_relation": "IMPORT_FOURNISSEUR",
+      "montant": 310000.0,
+      "premiere_date": "2026-06-04",
+      "nouvelle": true
+    },
+    {
+      "source": "1000311KAM000",
+      "cible": "FE00231",
+      "type_relation": "IMPORT_FOURNISSEUR",
+      "montant": 275000.0,
+      "premiere_date": "2026-06-11",
+      "nouvelle": true
+    },
+    {
+      "source": "1000312KAM000",
+      "cible": "FE00231",
+      "type_relation": "IMPORT_FOURNISSEUR",
+      "montant": 240000.0,
+      "premiere_date": "2026-06-09",
+      "nouvelle": true
+    },
+    {
+      "source": "1000313KAM000",
+      "cible": "FE00231",
+      "type_relation": "IMPORT_FOURNISSEUR",
+      "montant": 198000.0,
+      "premiere_date": "2026-06-17",
+      "nouvelle": true
+    },
+    {
+      "source": "1000314KAM000",
+      "cible": "FE00231",
+      "type_relation": "IMPORT_FOURNISSEUR",
+      "montant": 226000.0,
+      "premiere_date": "2026-06-22",
+      "nouvelle": true
+    },
+    {
+      "source": "1000001BAM000",
+      "cible": "FE00088",
+      "type_relation": "IMPORT_FOURNISSEUR",
+      "montant": 145000.0,
+      "premiere_date": "2019-04-02",
+      "nouvelle": false
+    }
+  ]
+}

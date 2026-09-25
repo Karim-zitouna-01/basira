@@ -1,0 +1,28 @@
+{
+  "top_n": 50,
+  "periode_test": "2025-09 → 2026-08",
+  "methodes": [
+    {
+      "nom": "Basira",
+      "taux_detection_top_n": 0.78,
+      "montant_moyen_par_controle": 185000.0,
+      "fausses_alertes_croissance_legitime": 1,
+      "avance_detection_mois": 2.4
+    },
+    {
+      "nom": "Règle statique (type SAR)",
+      "taux_detection_top_n": 0.34,
+      "montant_moyen_par_controle": 72000.0,
+      "fausses_alertes_croissance_legitime": 11,
+      "avance_detection_mois": 0.0
+    },
+    {
+      "nom": "Sélection aléatoire",
+      "taux_detection_top_n": 0.08,
+      "montant_moyen_par_controle": 15000.0,
+      "fausses_alertes_croissance_legitime": 1,
+      "avance_detection_mois": null
+    }
+  ],
+  "note": "Chiffres calculés sur données synthétiques ; vérité terrain cachée au modèle."
+}

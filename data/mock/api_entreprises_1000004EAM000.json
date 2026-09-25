@@ -1,0 +1,355 @@
+{
+  "identite": {
+    "mf": "1000004EAM000",
+    "matricule_fiscal": "1000004/E/A/M/000",
+    "raison_sociale": "Delta Trade SARL",
+    "forme_juridique": "SARL",
+    "code_nat": "46.90",
+    "libelle_nat": "Commerce de gros non spécialisé",
+    "gouvernorat": "Médenine",
+    "date_debut_activite": "2019-01-10",
+    "effectif": 2,
+    "statut_oea": false,
+    "centre_gestion": "CRCI"
+  },
+  "score": 73.0,
+  "segment": "PRIORITAIRE",
+  "confiance": 0.55,
+  "enjeu": {
+    "estime": 95000.0,
+    "bas": 55000.0,
+    "haut": 150000.0
+  },
+  "action_suggeree": "DEMANDE_INFO",
+  "resume_fr": "4 déclarations mensuelles sur 6 non déposées ou en retard, puis importations ×6 soudaines. Enjeu estimé : 95 000 DT.",
+  "trajectoire": [
+    {
+      "mois": "2024-09",
+      "score": 35.2,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2024-10",
+      "score": 33.7,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2024-11",
+      "score": 31.6,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2024-12",
+      "score": 35.0,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-01",
+      "score": 32.9,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-02",
+      "score": 36.3,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-03",
+      "score": 35.5,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-04",
+      "score": 32.1,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-05",
+      "score": 35.3,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-06",
+      "score": 33.1,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-07",
+      "score": 36.0,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-08",
+      "score": 34.2,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-09",
+      "score": 33.2,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-10",
+      "score": 34.3,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-11",
+      "score": 35.1,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-12",
+      "score": 32.1,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2026-01",
+      "score": 34.6,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2026-02",
+      "score": 32.1,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2026-03",
+      "score": 32.1,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2026-04",
+      "score": 35.0,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2026-05",
+      "score": 47.6,
+      "segment": "SURVEILLANCE"
+    },
+    {
+      "mois": "2026-06",
+      "score": 61.0,
+      "segment": "SURVEILLANCE"
+    },
+    {
+      "mois": "2026-07",
+      "score": 67.4,
+      "segment": "SURVEILLANCE"
+    },
+    {
+      "mois": "2026-08",
+      "score": 73.0,
+      "segment": "PRIORITAIRE"
+    }
+  ],
+  "contributions": [
+    {
+      "code_signal": "CHG_DEPOTS",
+      "lentille": "CHANGEMENT",
+      "points": 17.5,
+      "valeur_norm": 1.0,
+      "fait_fr": "4 déclarations mensuelles sur 6 non déposées ou en retard.",
+      "sources": [
+        "dgi_declarations"
+      ],
+      "nb_preuves": 6
+    },
+    {
+      "code_signal": "CHG_IMPORTS",
+      "lentille": "CHANGEMENT",
+      "points": 16.0,
+      "valeur_norm": 1.0,
+      "fait_fr": "Importations ×6,1 par rapport à la moyenne des 12 derniers mois.",
+      "sources": [
+        "douane"
+      ],
+      "nb_preuves": 7
+    },
+    {
+      "code_signal": "COH_IMPORT_VS_CA",
+      "lentille": "COHERENCE",
+      "points": 12.4,
+      "valeur_norm": 0.7,
+      "fait_fr": "Importations sur 6 mois : +480 % ; CA déclaré : −10 %.",
+      "sources": [
+        "douane",
+        "dgi_declarations"
+      ],
+      "nb_preuves": 7
+    },
+    {
+      "code_signal": "CHG_NOUVELLES_CATEGORIES",
+      "lentille": "CHANGEMENT",
+      "points": 6.1,
+      "valeur_norm": 0.67,
+      "fait_fr": "Nouvelles catégories importées : chapitres 61 et 64.",
+      "sources": [
+        "douane"
+      ],
+      "nb_preuves": 3
+    }
+  ],
+  "pairs": {
+    "groupe": "46 × 0–2 salariés",
+    "nb_pairs": 912,
+    "indicateurs": [
+      {
+        "nom": "Imports / CA",
+        "entreprise": 3.1,
+        "mediane_pairs": 0.3,
+        "p10": 0.0,
+        "p90": 0.8
+      }
+    ]
+  },
+  "series": [
+    {
+      "mois": "2024-09",
+      "ca_declare": 4087.248,
+      "imports_caf": 858.638,
+      "tva_deductible": 507.813
+    },
+    {
+      "mois": "2024-10",
+      "ca_declare": 3919.344,
+      "imports_caf": 965.232,
+      "tva_deductible": 473.931
+    },
+    {
+      "mois": "2024-11",
+      "ca_declare": 3955.752,
+      "imports_caf": 915.87,
+      "tva_deductible": 462.521
+    },
+    {
+      "mois": "2024-12",
+      "ca_declare": 4024.039,
+      "imports_caf": 1048.469,
+      "tva_deductible": 543.467
+    },
+    {
+      "mois": "2025-01",
+      "ca_declare": 4102.901,
+      "imports_caf": 969.058,
+      "tva_deductible": 475.497
+    },
+    {
+      "mois": "2025-02",
+      "ca_declare": 3802.703,
+      "imports_caf": 857.009,
+      "tva_deductible": 477.683
+    },
+    {
+      "mois": "2025-03",
+      "ca_declare": 3988.152,
+      "imports_caf": 929.145,
+      "tva_deductible": 481.474
+    },
+    {
+      "mois": "2025-04",
+      "ca_declare": 4248.768,
+      "imports_caf": 1028.095,
+      "tva_deductible": 533.955
+    },
+    {
+      "mois": "2025-05",
+      "ca_declare": 4029.67,
+      "imports_caf": 1045.064,
+      "tva_deductible": 546.131
+    },
+    {
+      "mois": "2025-06",
+      "ca_declare": 4007.866,
+      "imports_caf": 929.567,
+      "tva_deductible": 513.301
+    },
+    {
+      "mois": "2025-07",
+      "ca_declare": 4142.538,
+      "imports_caf": 945.249,
+      "tva_deductible": 515.787
+    },
+    {
+      "mois": "2025-08",
+      "ca_declare": 3726.389,
+      "imports_caf": 1143.439,
+      "tva_deductible": 497.055
+    },
+    {
+      "mois": "2025-09",
+      "ca_declare": 4263.308,
+      "imports_caf": 1053.743,
+      "tva_deductible": 536.211
+    },
+    {
+      "mois": "2025-10",
+      "ca_declare": 4239.249,
+      "imports_caf": 1121.814,
+      "tva_deductible": 489.907
+    },
+    {
+      "mois": "2025-11",
+      "ca_declare": 4266.656,
+      "imports_caf": 1135.3,
+      "tva_deductible": 473.251
+    },
+    {
+      "mois": "2025-12",
+      "ca_declare": 4184.269,
+      "imports_caf": 953.106,
+      "tva_deductible": 470.098
+    },
+    {
+      "mois": "2026-01",
+      "ca_declare": 3921.101,
+      "imports_caf": 1041.103,
+      "tva_deductible": 504.88
+    },
+    {
+      "mois": "2026-02",
+      "ca_declare": 3985.475,
+      "imports_caf": 1086.589,
+      "tva_deductible": 508.058
+    },
+    {
+      "mois": "2026-03",
+      "ca_declare": 3825.225,
+      "imports_caf": 45000.0,
+      "tva_deductible": 465.378
+    },
+    {
+      "mois": "2026-04",
+      "ca_declare": 4220.527,
+      "imports_caf": 45000.0,
+      "tva_deductible": 531.375
+    },
+    {
+      "mois": "2026-05",
+      "ca_declare": 4187.634,
+      "imports_caf": 45000.0,
+      "tva_deductible": 529.537
+    },
+    {
+      "mois": "2026-06",
+      "ca_declare": 3500.0,
+      "imports_caf": 95000.0,
+      "tva_deductible": 487.279
+    },
+    {
+      "mois": "2026-07",
+      "ca_declare": 3500.0,
+      "imports_caf": 95000.0,
+      "tva_deductible": 523.952
+    },
+    {
+      "mois": "2026-08",
+      "ca_declare": 3500.0,
+      "imports_caf": 95000.0,
+      "tva_deductible": 471.712
+    }
+  ],
+  "decisions": [],
+  "controles_passes": []
+}

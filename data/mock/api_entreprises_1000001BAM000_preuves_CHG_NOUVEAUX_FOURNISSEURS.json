@@ -1,0 +1,48 @@
+{
+  "code_signal": "CHG_NOUVEAUX_FOURNISSEURS",
+  "fait_fr": "3 nouveaux fournisseurs en 3 mois (2 étrangers, 1 local).",
+  "lignes": [
+    {
+      "source": "douane_articles",
+      "ref": "2026/401/0037219-001",
+      "date": "2026-08-06",
+      "libelle": "NDP 84798997000 — Machines diverses — CN — FE00231",
+      "montant": 359169.92,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 40,
+        "unite": "U",
+        "prix_unitaire_tnd": 8979.248,
+        "circuit": "O"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/402/0059550-002",
+      "date": "2026-07-21",
+      "libelle": "NDP 84798997001 — Machines diverses — CN — FE00231",
+      "montant": 303377.763,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 37,
+        "unite": "U",
+        "prix_unitaire_tnd": 8199.399,
+        "circuit": "O"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/301/0033019-003",
+      "date": "2026-06-24",
+      "libelle": "NDP 84798997002 — Machines diverses — CN — FE00231",
+      "montant": 167003.784,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 18,
+        "unite": "U",
+        "prix_unitaire_tnd": 9277.988,
+        "circuit": "V"
+      }
+    }
+  ]
+}

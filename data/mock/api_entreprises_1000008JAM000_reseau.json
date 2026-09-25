@@ -1,0 +1,94 @@
+{
+  "noeuds": [
+    {
+      "id": "1000008JAM000",
+      "label": "Omega Négoce SUARL",
+      "type": "ENTREPRISE",
+      "segment": "PRIORITAIRE",
+      "est_coquille": true,
+      "centre": true
+    },
+    {
+      "id": "1000411KAM000",
+      "label": "Sigma Distribution SARL",
+      "type": "ENTREPRISE",
+      "segment": "SURVEILLANCE",
+      "est_coquille": false,
+      "centre": false
+    },
+    {
+      "id": "1000412KAM000",
+      "label": "Tau Matériaux SARL",
+      "type": "ENTREPRISE",
+      "segment": "SURVEILLANCE",
+      "est_coquille": false,
+      "centre": false
+    },
+    {
+      "id": "1000413KAM000",
+      "label": "Upsilon Services SUARL",
+      "type": "ENTREPRISE",
+      "segment": "SURVEILLANCE",
+      "est_coquille": false,
+      "centre": false
+    },
+    {
+      "id": "1000414KAM000",
+      "label": "Phi Équipements SARL",
+      "type": "ENTREPRISE",
+      "segment": "SURVEILLANCE",
+      "est_coquille": false,
+      "centre": false
+    },
+    {
+      "id": "1000415KAM000",
+      "label": "Chi Commerce SARL",
+      "type": "ENTREPRISE",
+      "segment": "SURVEILLANCE",
+      "est_coquille": false,
+      "centre": false
+    }
+  ],
+  "aretes": [
+    {
+      "source": "1000411KAM000",
+      "cible": "1000008JAM000",
+      "type_relation": "ACHAT_LOCAL_A5",
+      "montant": 640000.0,
+      "premiere_date": "2025-03-01",
+      "nouvelle": true
+    },
+    {
+      "source": "1000412KAM000",
+      "cible": "1000008JAM000",
+      "type_relation": "ACHAT_LOCAL_A5",
+      "montant": 640000.0,
+      "premiere_date": "2025-03-01",
+      "nouvelle": true
+    },
+    {
+      "source": "1000413KAM000",
+      "cible": "1000008JAM000",
+      "type_relation": "ACHAT_LOCAL_A5",
+      "montant": 640000.0,
+      "premiere_date": "2025-03-01",
+      "nouvelle": true
+    },
+    {
+      "source": "1000414KAM000",
+      "cible": "1000008JAM000",
+      "type_relation": "ACHAT_LOCAL_A5",
+      "montant": 640000.0,
+      "premiere_date": "2025-03-01",
+      "nouvelle": true
+    },
+    {
+      "source": "1000415KAM000",
+      "cible": "1000008JAM000",
+      "type_relation": "ACHAT_LOCAL_A5",
+      "montant": 640000.0,
+      "premiere_date": "2025-03-01",
+      "nouvelle": true
+    }
+  ]
+}

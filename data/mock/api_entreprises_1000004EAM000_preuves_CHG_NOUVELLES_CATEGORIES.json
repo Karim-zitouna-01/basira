@@ -1,0 +1,48 @@
+{
+  "code_signal": "CHG_NOUVELLES_CATEGORIES",
+  "fait_fr": "Nouvelles catégories importées : chapitres 61 et 64.",
+  "lignes": [
+    {
+      "source": "douane_articles",
+      "ref": "2026/401/0067017-001",
+      "date": "2026-08-11",
+      "libelle": "NDP 84798997000 — Machines diverses — IT — FE00405",
+      "montant": 243106.18,
+      "champs": {
+        "pays_origine": "IT",
+        "quantite": 10,
+        "unite": "U",
+        "prix_unitaire_tnd": 24310.618,
+        "circuit": "V"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/401/0036484-002",
+      "date": "2026-07-04",
+      "libelle": "NDP 84798997001 — Machines diverses — IT — FE00306",
+      "montant": 328791.078,
+      "champs": {
+        "pays_origine": "IT",
+        "quantite": 14,
+        "unite": "U",
+        "prix_unitaire_tnd": 23485.077,
+        "circuit": "V"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/401/0099523-003",
+      "date": "2026-06-02",
+      "libelle": "NDP 84798997002 — Machines diverses — CN — FE00741",
+      "montant": 69522.134,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 22,
+        "unite": "U",
+        "prix_unitaire_tnd": 3160.097,
+        "circuit": "O"
+      }
+    }
+  ]
+}

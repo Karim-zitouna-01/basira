@@ -1,0 +1,76 @@
+{
+  "code_signal": "RES_FOURNISSEUR_PARTAGE",
+  "fait_fr": "Partage un nouveau fournisseur étranger (FE00231) avec 4 autres entreprises apparues le même mois.",
+  "lignes": [
+    {
+      "source": "douane_articles",
+      "ref": "2026/402/0061508-001",
+      "date": "2026-08-17",
+      "libelle": "NDP 84798997000 — Machines diverses — CN — FE00231",
+      "montant": 69771.345,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 5,
+        "unite": "U",
+        "prix_unitaire_tnd": 13954.269,
+        "circuit": "V"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/401/0060572-002",
+      "date": "2026-07-16",
+      "libelle": "NDP 84798997001 — Machines diverses — CN — FE00231",
+      "montant": 47173.847,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 7,
+        "unite": "U",
+        "prix_unitaire_tnd": 6739.121,
+        "circuit": "V"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/301/0032488-003",
+      "date": "2026-06-19",
+      "libelle": "NDP 84798997002 — Machines diverses — CN — FE00231",
+      "montant": 80719.142,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 7,
+        "unite": "U",
+        "prix_unitaire_tnd": 11531.306,
+        "circuit": "O"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/401/0062406-004",
+      "date": "2026-05-09",
+      "libelle": "NDP 84798997003 — Machines diverses — CN — FE00231",
+      "montant": 172513.116,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 12,
+        "unite": "U",
+        "prix_unitaire_tnd": 14376.093,
+        "circuit": "O"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/401/0019740-005",
+      "date": "2026-04-10",
+      "libelle": "NDP 84798997004 — Machines diverses — CN — FE00231",
+      "montant": 146177.268,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 12,
+        "unite": "U",
+        "prix_unitaire_tnd": 12181.439,
+        "circuit": "V"
+      }
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "mois": "2026-08",
+  "nb_entreprises": 5250,
+  "par_segment": {
+    "PRIORITAIRE": 17,
+    "SURVEILLANCE": 43,
+    "NORMAL": 4760,
+    "CONFIANCE": 430
+  },
+  "nouveaux_prioritaires_du_mois": 9,
+  "enjeu_total_prioritaires": 6840000.0,
+  "seuils": {
+    "PRIORITAIRE": 70,
+    "SURVEILLANCE": 40,
+    "CONFIANCE": 15
+  }
+}

@@ -1,0 +1,150 @@
+{
+  "code_signal": "COH_ADEB_VS_CA",
+  "fait_fr": "840 000 DT reçus d'acheteurs publics sur 12 mois, pour un CA déclaré de 610 000 DT.",
+  "lignes": [
+    {
+      "source": "adeb_paiements",
+      "ref": "ORD-2026-0005816",
+      "date": "2026-08-03",
+      "libelle": "Ordonnance de paiement — Ministère de l'Équipement — Marché TUNEPS",
+      "montant": 82223.289,
+      "champs": {
+        "montant_ht": 82223.289,
+        "retenue_tva_25": 3905.606,
+        "nature_achat": "MARCHE_TUNEPS"
+      }
+    },
+    {
+      "source": "adeb_paiements",
+      "ref": "ORD-2026-0001895",
+      "date": "2026-07-19",
+      "libelle": "Ordonnance de paiement — Ministère de l'Équipement — Marché TUNEPS",
+      "montant": 108294.649,
+      "champs": {
+        "montant_ht": 108294.649,
+        "retenue_tva_25": 5143.996,
+        "nature_achat": "MARCHE_TUNEPS"
+      }
+    },
+    {
+      "source": "adeb_paiements",
+      "ref": "ORD-2026-0008073",
+      "date": "2026-06-05",
+      "libelle": "Ordonnance de paiement — Ministère de l'Équipement — Marché TUNEPS",
+      "montant": 93875.346,
+      "champs": {
+        "montant_ht": 93875.346,
+        "retenue_tva_25": 4459.079,
+        "nature_achat": "MARCHE_TUNEPS"
+      }
+    },
+    {
+      "source": "adeb_paiements",
+      "ref": "ORD-2026-0005216",
+      "date": "2026-05-10",
+      "libelle": "Ordonnance de paiement — Ministère de l'Équipement — Marché TUNEPS",
+      "montant": 66875.216,
+      "champs": {
+        "montant_ht": 66875.216,
+        "retenue_tva_25": 3176.573,
+        "nature_achat": "MARCHE_TUNEPS"
+      }
+    },
+    {
+      "source": "adeb_paiements",
+      "ref": "ORD-2026-0001944",
+      "date": "2026-04-02",
+      "libelle": "Ordonnance de paiement — Ministère de l'Équipement — Marché TUNEPS",
+      "montant": 54436.78,
+      "champs": {
+        "montant_ht": 54436.78,
+        "retenue_tva_25": 2585.747,
+        "nature_achat": "MARCHE_TUNEPS"
+      }
+    },
+    {
+      "source": "adeb_paiements",
+      "ref": "ORD-2026-0001814",
+      "date": "2026-03-04",
+      "libelle": "Ordonnance de paiement — Ministère de l'Équipement — Marché TUNEPS",
+      "montant": 56021.5,
+      "champs": {
+        "montant_ht": 56021.5,
+        "retenue_tva_25": 2661.021,
+        "nature_achat": "MARCHE_TUNEPS"
+      }
+    },
+    {
+      "source": "adeb_paiements",
+      "ref": "ORD-2026-0009842",
+      "date": "2026-08-24",
+      "libelle": "Ordonnance de paiement — Ministère de l'Équipement — Marché TUNEPS",
+      "montant": 65698.43,
+      "champs": {
+        "montant_ht": 65698.43,
+        "retenue_tva_25": 3120.675,
+        "nature_achat": "MARCHE_TUNEPS"
+      }
+    },
+    {
+      "source": "adeb_paiements",
+      "ref": "ORD-2026-0009790",
+      "date": "2026-07-16",
+      "libelle": "Ordonnance de paiement — Ministère de l'Équipement — Marché TUNEPS",
+      "montant": 47218.893,
+      "champs": {
+        "montant_ht": 47218.893,
+        "retenue_tva_25": 2242.897,
+        "nature_achat": "MARCHE_TUNEPS"
+      }
+    },
+    {
+      "source": "adeb_paiements",
+      "ref": "ORD-2026-0001890",
+      "date": "2026-06-18",
+      "libelle": "Ordonnance de paiement — Ministère de l'Équipement — Marché TUNEPS",
+      "montant": 84297.663,
+      "champs": {
+        "montant_ht": 84297.663,
+        "retenue_tva_25": 4004.139,
+        "nature_achat": "MARCHE_TUNEPS"
+      }
+    },
+    {
+      "source": "adeb_paiements",
+      "ref": "ORD-2026-0007854",
+      "date": "2026-05-11",
+      "libelle": "Ordonnance de paiement — Ministère de l'Équipement — Marché TUNEPS",
+      "montant": 48885.736,
+      "champs": {
+        "montant_ht": 48885.736,
+        "retenue_tva_25": 2322.072,
+        "nature_achat": "MARCHE_TUNEPS"
+      }
+    },
+    {
+      "source": "adeb_paiements",
+      "ref": "ORD-2026-0002094",
+      "date": "2026-04-09",
+      "libelle": "Ordonnance de paiement — Ministère de l'Équipement — Marché TUNEPS",
+      "montant": 48158.298,
+      "champs": {
+        "montant_ht": 48158.298,
+        "retenue_tva_25": 2287.519,
+        "nature_achat": "MARCHE_TUNEPS"
+      }
+    },
+    {
+      "source": "adeb_paiements",
+      "ref": "ORD-2026-0002176",
+      "date": "2026-03-05",
+      "libelle": "Ordonnance de paiement — Ministère de l'Équipement — Marché TUNEPS",
+      "montant": 95596.744,
+      "champs": {
+        "montant_ht": 95596.744,
+        "retenue_tva_25": 4540.845,
+        "nature_achat": "MARCHE_TUNEPS"
+      }
+    }
+  ]
+}

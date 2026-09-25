@@ -1,0 +1,30 @@
+{
+  "noeuds": [
+    {
+      "id": "1000002CAM000",
+      "label": "Beta Import SUARL",
+      "type": "ENTREPRISE",
+      "segment": "SURVEILLANCE",
+      "est_coquille": false,
+      "centre": true
+    },
+    {
+      "id": "FE00412",
+      "label": "Anatolia Trade Ltd.",
+      "type": "FOURNISSEUR_ETRANGER",
+      "segment": null,
+      "est_coquille": false,
+      "centre": false
+    }
+  ],
+  "aretes": [
+    {
+      "source": "1000002CAM000",
+      "cible": "FE00412",
+      "type_relation": "IMPORT_FOURNISSEUR",
+      "montant": 120000.0,
+      "premiere_date": "2021-05-10",
+      "nouvelle": false
+    }
+  ]
+}

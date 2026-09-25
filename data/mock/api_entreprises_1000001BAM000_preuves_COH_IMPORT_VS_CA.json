@@ -1,0 +1,202 @@
+{
+  "code_signal": "COH_IMPORT_VS_CA",
+  "fait_fr": "Importations sur 6 mois : +240 % ; CA déclaré : +3 %.",
+  "lignes": [
+    {
+      "source": "douane_articles",
+      "ref": "2026/401/0034567-001",
+      "date": "2026-07-12",
+      "libelle": "NDP 84798997000 — Machines diverses — Chine — FE00231",
+      "montant": 88000.0,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 4,
+        "unite": "U",
+        "prix_unitaire_tnd": 22000.0,
+        "circuit": "V"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/401/0066585-002",
+      "date": "2026-07-11",
+      "libelle": "NDP 84798997001 — Machines diverses — CN — FE00231",
+      "montant": 367881.054,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 17,
+        "unite": "U",
+        "prix_unitaire_tnd": 21640.062,
+        "circuit": "V"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/402/0031805-003",
+      "date": "2026-06-25",
+      "libelle": "NDP 84798997002 — Machines diverses — CN — FE00231",
+      "montant": 59817.264,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 39,
+        "unite": "U",
+        "prix_unitaire_tnd": 1533.776,
+        "circuit": "O"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/402/0019958-004",
+      "date": "2026-05-18",
+      "libelle": "NDP 84798997003 — Machines diverses — CN — FE00231",
+      "montant": 130160.268,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 9,
+        "unite": "U",
+        "prix_unitaire_tnd": 14462.252,
+        "circuit": "V"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/301/0064514-005",
+      "date": "2026-04-19",
+      "libelle": "NDP 84798997004 — Machines diverses — CN — FE00231",
+      "montant": 143047.416,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 12,
+        "unite": "U",
+        "prix_unitaire_tnd": 11920.618,
+        "circuit": "V"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/401/0032150-006",
+      "date": "2026-03-14",
+      "libelle": "NDP 84798997005 — Machines diverses — CN — FE00231",
+      "montant": 13576.018,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 2,
+        "unite": "U",
+        "prix_unitaire_tnd": 6788.009,
+        "circuit": "V"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/401/0031971-007",
+      "date": "2026-08-18",
+      "libelle": "NDP 84798997006 — Machines diverses — CN — FE00231",
+      "montant": 434782.453,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 19,
+        "unite": "U",
+        "prix_unitaire_tnd": 22883.287,
+        "circuit": "V"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/402/0083707-008",
+      "date": "2026-07-03",
+      "libelle": "NDP 84798997007 — Machines diverses — CN — FE00231",
+      "montant": 268952.01,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 15,
+        "unite": "U",
+        "prix_unitaire_tnd": 17930.134,
+        "circuit": "O"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/401/0071207-009",
+      "date": "2026-06-05",
+      "libelle": "NDP 84798997008 — Machines diverses — CN — FE00231",
+      "montant": 424432.77,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 30,
+        "unite": "U",
+        "prix_unitaire_tnd": 14147.759,
+        "circuit": "V"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/402/0095354-001",
+      "date": "2026-05-18",
+      "libelle": "NDP 84798997009 — Machines diverses — CN — FE00231",
+      "montant": 95851.976,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 4,
+        "unite": "U",
+        "prix_unitaire_tnd": 23962.994,
+        "circuit": "V"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/402/0018586-002",
+      "date": "2026-04-17",
+      "libelle": "NDP 84798997000 — Machines diverses — CN — FE00231",
+      "montant": 39603.445,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 5,
+        "unite": "U",
+        "prix_unitaire_tnd": 7920.689,
+        "circuit": "V"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/402/0015715-003",
+      "date": "2026-03-10",
+      "libelle": "NDP 84798997001 — Machines diverses — CN — FE00231",
+      "montant": 16139.97,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 15,
+        "unite": "U",
+        "prix_unitaire_tnd": 1075.998,
+        "circuit": "O"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/402/0081634-004",
+      "date": "2026-08-17",
+      "libelle": "NDP 84798997002 — Machines diverses — CN — FE00231",
+      "montant": 47134.836,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 18,
+        "unite": "U",
+        "prix_unitaire_tnd": 2618.602,
+        "circuit": "O"
+      }
+    },
+    {
+      "source": "douane_articles",
+      "ref": "2026/402/0041193-005",
+      "date": "2026-07-07",
+      "libelle": "NDP 84798997003 — Machines diverses — CN — FE00231",
+      "montant": 600145.772,
+      "champs": {
+        "pays_origine": "CN",
+        "quantite": 37,
+        "unite": "U",
+        "prix_unitaire_tnd": 16220.156,
+        "circuit": "O"
+      }
+    }
+  ]
+}

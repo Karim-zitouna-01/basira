@@ -1,0 +1,46 @@
+{
+  "noeuds": [
+    {
+      "id": "1000003DAM000",
+      "label": "Gamma Travaux SA",
+      "type": "ENTREPRISE",
+      "segment": "PRIORITAIRE",
+      "est_coquille": false,
+      "centre": true
+    },
+    {
+      "id": "AP0007",
+      "label": "Ministère de l'Équipement",
+      "type": "ACHETEUR_PUBLIC",
+      "segment": null,
+      "est_coquille": false,
+      "centre": false
+    },
+    {
+      "id": "AP0023",
+      "label": "Commune de Tunis",
+      "type": "ACHETEUR_PUBLIC",
+      "segment": null,
+      "est_coquille": false,
+      "centre": false
+    }
+  ],
+  "aretes": [
+    {
+      "source": "AP0007",
+      "cible": "1000003DAM000",
+      "type_relation": "PAIEMENT_PUBLIC",
+      "montant": 610000.0,
+      "premiere_date": "2023-02-14",
+      "nouvelle": false
+    },
+    {
+      "source": "AP0023",
+      "cible": "1000003DAM000",
+      "type_relation": "PAIEMENT_PUBLIC",
+      "montant": 230000.0,
+      "premiere_date": "2025-11-03",
+      "nouvelle": true
+    }
+  ]
+}

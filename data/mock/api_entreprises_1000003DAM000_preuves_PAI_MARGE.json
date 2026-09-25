@@ -1,0 +1,138 @@
+{
+  "code_signal": "PAI_MARGE",
+  "fait_fr": "Marge apparente de 4 % contre 15 % en médiane pour les pairs (42, 50+ salariés).",
+  "lignes": [
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000003DAM000:2026-08",
+      "date": "2026-08-28",
+      "libelle": "Déclaration mensuelle 2026-08",
+      "montant": 50207.798,
+      "champs": {
+        "ca_total_declare": 50207.798,
+        "tva_deductible_biens_services_local": 6313.213
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000003DAM000:2026-07",
+      "date": "2026-07-28",
+      "libelle": "Déclaration mensuelle 2026-07",
+      "montant": 53579.687,
+      "champs": {
+        "ca_total_declare": 53579.687,
+        "tva_deductible_biens_services_local": 7050.852
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000003DAM000:2026-06",
+      "date": "2026-06-28",
+      "libelle": "Déclaration mensuelle 2026-06",
+      "montant": 54420.861,
+      "champs": {
+        "ca_total_declare": 54420.861,
+        "tva_deductible_biens_services_local": 6742.403
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000003DAM000:2026-05",
+      "date": "2026-05-28",
+      "libelle": "Déclaration mensuelle 2026-05",
+      "montant": 49686.695,
+      "champs": {
+        "ca_total_declare": 49686.695,
+        "tva_deductible_biens_services_local": 6451.471
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000003DAM000:2026-04",
+      "date": "2026-04-28",
+      "libelle": "Déclaration mensuelle 2026-04",
+      "montant": 52104.68,
+      "champs": {
+        "ca_total_declare": 52104.68,
+        "tva_deductible_biens_services_local": 7052.167
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000003DAM000:2026-03",
+      "date": "2026-03-28",
+      "libelle": "Déclaration mensuelle 2026-03",
+      "montant": 49931.191,
+      "champs": {
+        "ca_total_declare": 49931.191,
+        "tva_deductible_biens_services_local": 6639.432
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000003DAM000:2026-08",
+      "date": "2026-08-28",
+      "libelle": "Déclaration mensuelle 2026-08",
+      "montant": 50207.798,
+      "champs": {
+        "ca_total_declare": 50207.798,
+        "tva_deductible_biens_services_local": 6313.213
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000003DAM000:2026-07",
+      "date": "2026-07-28",
+      "libelle": "Déclaration mensuelle 2026-07",
+      "montant": 53579.687,
+      "champs": {
+        "ca_total_declare": 53579.687,
+        "tva_deductible_biens_services_local": 7050.852
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000003DAM000:2026-06",
+      "date": "2026-06-28",
+      "libelle": "Déclaration mensuelle 2026-06",
+      "montant": 54420.861,
+      "champs": {
+        "ca_total_declare": 54420.861,
+        "tva_deductible_biens_services_local": 6742.403
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000003DAM000:2026-05",
+      "date": "2026-05-28",
+      "libelle": "Déclaration mensuelle 2026-05",
+      "montant": 49686.695,
+      "champs": {
+        "ca_total_declare": 49686.695,
+        "tva_deductible_biens_services_local": 6451.471
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000003DAM000:2026-04",
+      "date": "2026-04-28",
+      "libelle": "Déclaration mensuelle 2026-04",
+      "montant": 52104.68,
+      "champs": {
+        "ca_total_declare": 52104.68,
+        "tva_deductible_biens_services_local": 7052.167
+      }
+    },
+    {
+      "source": "declarations_mensuelles",
+      "ref": "1000003DAM000:2026-03",
+      "date": "2026-03-28",
+      "libelle": "Déclaration mensuelle 2026-03",
+      "montant": 49931.191,
+      "champs": {
+        "ca_total_declare": 49931.191,
+        "tva_deductible_biens_services_local": 6639.432
+      }
+    }
+  ]
+}

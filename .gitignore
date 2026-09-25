@@ -1,0 +1,17 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Données (produites par le pipeline ; les mocks restent versionnés)
+data/raw/
+data/graphe/
+data/signaux/
+data/scores/
+data/dev/

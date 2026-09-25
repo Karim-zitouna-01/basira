@@ -1,0 +1,340 @@
+{
+  "identite": {
+    "mf": "1000005FAM000",
+    "matricule_fiscal": "1000005/F/A/M/000",
+    "raison_sociale": "Epsilon Textile SARL",
+    "forme_juridique": "SARL",
+    "code_nat": "14.13",
+    "libelle_nat": "Fabrication d'autres vêtements de dessus",
+    "gouvernorat": "Monastir",
+    "date_debut_activite": "2011-06-01",
+    "effectif": 38,
+    "statut_oea": false,
+    "centre_gestion": "CRCI"
+  },
+  "score": 56.0,
+  "segment": "SURVEILLANCE",
+  "confiance": 0.68,
+  "enjeu": {
+    "estime": 120000.0,
+    "bas": 80000.0,
+    "haut": 170000.0
+  },
+  "action_suggeree": "RELANCE",
+  "resume_fr": "Marge apparente de 3 % contre 22 % en médiane pour les pairs, profil atypique. Enjeu estimé : 120 000 DT.",
+  "trajectoire": [
+    {
+      "mois": "2024-09",
+      "score": 22.7,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2024-10",
+      "score": 21.4,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2024-11",
+      "score": 21.4,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2024-12",
+      "score": 23.3,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-01",
+      "score": 20.4,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-02",
+      "score": 23.3,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-03",
+      "score": 21.1,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-04",
+      "score": 21.7,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-05",
+      "score": 19.3,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-06",
+      "score": 21.0,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-07",
+      "score": 18.9,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-08",
+      "score": 22.2,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-09",
+      "score": 20.2,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-10",
+      "score": 22.0,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-11",
+      "score": 29.3,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2025-12",
+      "score": 28.6,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2026-01",
+      "score": 30.3,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2026-02",
+      "score": 38.0,
+      "segment": "NORMAL"
+    },
+    {
+      "mois": "2026-03",
+      "score": 47.9,
+      "segment": "SURVEILLANCE"
+    },
+    {
+      "mois": "2026-04",
+      "score": 46.0,
+      "segment": "SURVEILLANCE"
+    },
+    {
+      "mois": "2026-05",
+      "score": 46.4,
+      "segment": "SURVEILLANCE"
+    },
+    {
+      "mois": "2026-06",
+      "score": 47.1,
+      "segment": "SURVEILLANCE"
+    },
+    {
+      "mois": "2026-07",
+      "score": 46.6,
+      "segment": "SURVEILLANCE"
+    },
+    {
+      "mois": "2026-08",
+      "score": 56.0,
+      "segment": "SURVEILLANCE"
+    }
+  ],
+  "contributions": [
+    {
+      "code_signal": "PAI_MARGE",
+      "lentille": "PAIRS",
+      "points": 21.3,
+      "valeur_norm": 0.85,
+      "fait_fr": "Marge apparente de 3 % contre 22 % en médiane pour les pairs (14, 10–49 salariés).",
+      "sources": [
+        "dgi_declarations",
+        "douane"
+      ],
+      "nb_preuves": 12
+    },
+    {
+      "code_signal": "PAI_MAHALANOBIS",
+      "lentille": "PAIRS",
+      "points": 14.4,
+      "valeur_norm": 0.75,
+      "fait_fr": "Profil atypique pour son secteur, surtout le ratio TVA déductible / collectée (0,94 contre 0,58).",
+      "sources": [
+        "dgi_declarations"
+      ],
+      "nb_preuves": 12
+    }
+  ],
+  "pairs": {
+    "groupe": "14 × 10–49 salariés",
+    "nb_pairs": 143,
+    "indicateurs": [
+      {
+        "nom": "Marge apparente",
+        "entreprise": 0.03,
+        "mediane_pairs": 0.22,
+        "p10": 0.12,
+        "p90": 0.31
+      },
+      {
+        "nom": "TVA déductible / collectée",
+        "entreprise": 0.94,
+        "mediane_pairs": 0.58,
+        "p10": 0.41,
+        "p90": 0.74
+      }
+    ]
+  },
+  "series": [
+    {
+      "mois": "2024-09",
+      "ca_declare": 191913.403,
+      "imports_caf": 86127.869,
+      "tva_deductible": 22037.411
+    },
+    {
+      "mois": "2024-10",
+      "ca_declare": 167638.111,
+      "imports_caf": 98019.607,
+      "tva_deductible": 20916.051
+    },
+    {
+      "mois": "2024-11",
+      "ca_declare": 178050.853,
+      "imports_caf": 103895.657,
+      "tva_deductible": 22688.934
+    },
+    {
+      "mois": "2024-12",
+      "ca_declare": 192071.378,
+      "imports_caf": 109159.091,
+      "tva_deductible": 19617.718
+    },
+    {
+      "mois": "2025-01",
+      "ca_declare": 180407.998,
+      "imports_caf": 85869.259,
+      "tva_deductible": 21164.205
+    },
+    {
+      "mois": "2025-02",
+      "ca_declare": 171531.237,
+      "imports_caf": 106034.985,
+      "tva_deductible": 21062.967
+    },
+    {
+      "mois": "2025-03",
+      "ca_declare": 189634.57,
+      "imports_caf": 99087.038,
+      "tva_deductible": 18908.369
+    },
+    {
+      "mois": "2025-04",
+      "ca_declare": 176838.846,
+      "imports_caf": 91237.901,
+      "tva_deductible": 19808.004
+    },
+    {
+      "mois": "2025-05",
+      "ca_declare": 171286.497,
+      "imports_caf": 98135.53,
+      "tva_deductible": 19431.403
+    },
+    {
+      "mois": "2025-06",
+      "ca_declare": 192222.837,
+      "imports_caf": 94560.097,
+      "tva_deductible": 22570.705
+    },
+    {
+      "mois": "2025-07",
+      "ca_declare": 185710.929,
+      "imports_caf": 91614.159,
+      "tva_deductible": 21491.21
+    },
+    {
+      "mois": "2025-08",
+      "ca_declare": 183718.149,
+      "imports_caf": 90662.273,
+      "tva_deductible": 22719.898
+    },
+    {
+      "mois": "2025-09",
+      "ca_declare": 170447.653,
+      "imports_caf": 95539.971,
+      "tva_deductible": 22380.301
+    },
+    {
+      "mois": "2025-10",
+      "ca_declare": 184625.058,
+      "imports_caf": 93744.114,
+      "tva_deductible": 21358.324
+    },
+    {
+      "mois": "2025-11",
+      "ca_declare": 169480.247,
+      "imports_caf": 102952.815,
+      "tva_deductible": 19269.041
+    },
+    {
+      "mois": "2025-12",
+      "ca_declare": 179869.283,
+      "imports_caf": 89642.747,
+      "tva_deductible": 22063.827
+    },
+    {
+      "mois": "2026-01",
+      "ca_declare": 173096.408,
+      "imports_caf": 90012.558,
+      "tva_deductible": 21026.343
+    },
+    {
+      "mois": "2026-02",
+      "ca_declare": 175759.158,
+      "imports_caf": 106602.509,
+      "tva_deductible": 21940.164
+    },
+    {
+      "mois": "2026-03",
+      "ca_declare": 189002.734,
+      "imports_caf": 92237.477,
+      "tva_deductible": 19642.322
+    },
+    {
+      "mois": "2026-04",
+      "ca_declare": 187720.718,
+      "imports_caf": 87024.867,
+      "tva_deductible": 21794.477
+    },
+    {
+      "mois": "2026-05",
+      "ca_declare": 176183.374,
+      "imports_caf": 103184.744,
+      "tva_deductible": 20620.74
+    },
+    {
+      "mois": "2026-06",
+      "ca_declare": 187641.642,
+      "imports_caf": 91626.387,
+      "tva_deductible": 19548.39
+    },
+    {
+      "mois": "2026-07",
+      "ca_declare": 186124.34,
+      "imports_caf": 99469.977,
+      "tva_deductible": 19435.853
+    },
+    {
+      "mois": "2026-08",
+      "ca_declare": 174144.251,
+      "imports_caf": 104565.913,
+      "tva_deductible": 20244.145
+    }
+  ],
+  "decisions": [],
+  "controles_passes": []
+}
