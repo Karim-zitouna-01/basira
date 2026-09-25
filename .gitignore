@@ -15,3 +15,8 @@ data/graphe/
 data/signaux/
 data/scores/
 data/dev/
+
+# Artefacts de A/B
+.pytest_cache/
+.ruff_cache/
+docs/lot_B/*.pdf.tmp

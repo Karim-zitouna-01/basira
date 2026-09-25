@@ -1,0 +1,26 @@
+{
+  "entreprises": 5250,
+  "mois": 24,
+  "lignes_signaux": 2016000,
+  "signaux_actifs": 366,
+  "duree_secondes": 205.854,
+  "avertissements": [],
+  "problemes_preuves": [],
+  "entrees_sha256": {
+    "raw/contribuables.csv": "ad2da54eeeb842b55f725e15fbd925e892fde88b44507a4e29c533f595ac7f53",
+    "raw/declarations_mensuelles.csv": "696d03039fd1e46a033d7a21f11de2bf17cb94e591957e3bf4ce50964554759f",
+    "raw/douane_declarations.csv": "3d072b601380d3f3a35ccdbf6ac60dadf2f1a666b59b5bb441dfe8a79b5724d5",
+    "raw/douane_articles.csv": "3a9e69a762fef2e00b32965de805a6deb51ff35891572df1ab53cb5f412e7007",
+    "raw/douane_liquidation.csv": "df4bc0ebda4412837a5cb1e3cef68dfe5127841d3b9a342921633bcc1c25695f",
+    "raw/employeur_annexe5.csv": "8246d6c5906bc6d131651a5add943d8333d1a5a1b9aa1e360514c1721c05659e",
+    "raw/employeur_annexe2.csv": "5595350f6d1b9071304507ef7bbddc2708a75e01447ef45ba1100dd8e9bd4a65",
+    "raw/employeur_annexe1_synthese.csv": "728467b0370344bdfdeeec3e1cf0a15f8f4c5559a11454a1206d22ea7d0ae280",
+    "raw/adeb_paiements.csv": "61a8de2dfd8c7896a83b7fa9d790b8648c952f833181606d2f72e60c24ce14f4",
+    "raw/ref_ndp.csv": "08e41de8f0c44441a73b3b311df01b0e952ce01650e8e66ba609dd590078d3fc",
+    "graphe/metriques_noeuds.csv": "83fc372dd79d58272a4ab0c8ad1277232ebcbfbc80e654dfa4bde9924089afee",
+    "raw/historique_controles.csv": "88083004ebdd888eb05a1f0b6505590bf61d37e370bad3c6b14557dd9336442a"
+  },
+  "debut": "2024-09",
+  "fin": "2026-08",
+  "mode_disponibilite": "fin de mois; dernière période fiscale échue = mois précédent"
+}

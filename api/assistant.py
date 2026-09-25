@@ -10,6 +10,8 @@ import logging
 import re
 import time
 
+from openai import BadRequestError
+
 from scoring import config
 
 from . import modele_texte
@@ -153,7 +155,14 @@ def repondre_llm(store: BaseStore, mf: str, mois: str, question: str, historique
     contexte: list[str] = []
     citations_outils: list[dict] = []
 
-    if not config.LLM_TOOLS:  # plan B : tout le contexte dans le prompt, sans outils
+    final = None
+    if config.LLM_TOOLS:
+        try:
+            final = _boucle_outils(store, mf, mois, msgs, fin, contexte, citations_outils)
+        except BadRequestError as e:  # serveur sans tool-calling (llama-server sans --jinja) → plan B
+            log.warning("assistant : outils refusés par le serveur, plan B (%s)", e)
+            msgs, contexte[:], citations_outils[:] = _messages_initiaux(mf, mois, question, historique), [], []
+    if final is None:  # plan B : tout le contexte dans le prompt, sans outils
         d = store.entreprise(mf, mois)
         ctx = {"entreprise": _alleger_entreprise(d)}
         top = sorted(d.get("contributions") or [], key=lambda c: -c["points"])
@@ -161,38 +170,9 @@ def repondre_llm(store: BaseStore, mf: str, mois: str, question: str, historique
             ctx["preuves_signal_principal"] = executer_outil(store, "get_preuves", {"signal": top[0]["code_signal"]}, mf, mois)
         texte = json.dumps(ctx, ensure_ascii=False)
         contexte.append(texte)
-        msgs.insert(1, {"role": "system", "content": "Données disponibles (JSON) :\n" + texte})
-        rep = _client(fin - time.monotonic()).chat.completions.create(model=config.LLM_MODEL, messages=msgs, temperature=0.1)
-        final = _sans_reflexion(rep.choices[0].message.content)
-    else:
-        final = None
-        for _ in range(5):
-            restant = fin - time.monotonic()
-            if restant <= 0.5:
-                raise EchecLLM("délai dépassé")
-            rep = _client(restant).chat.completions.create(model=config.LLM_MODEL, messages=msgs, tools=OUTILS, temperature=0.1)
-            msg = rep.choices[0].message
-            if not msg.tool_calls:
-                final = _sans_reflexion(msg.content)
-                break
-            msgs.append({"role": "assistant", "content": msg.content or "",
-                         "tool_calls": [{"id": tc.id, "type": "function", "function": {"name": tc.function.name, "arguments": tc.function.arguments}}
-                                        for tc in msg.tool_calls]})
-            for tc in msg.tool_calls:
-                try:
-                    args = json.loads(tc.function.arguments or "{}")
-                    res = executer_outil(store, tc.function.name, args, mf, mois)
-                    if tc.function.name == "get_preuves":
-                        citations_outils.append({"type": "signal", "ref": res.get("code_signal")})
-                except (Introuvable, EchecLLM, json.JSONDecodeError) as e:
-                    res = {"erreur": str(e)}
-                texte = json.dumps(res, ensure_ascii=False)
-                contexte.append(texte)
-                msgs.append({"role": "tool", "tool_call_id": tc.id, "content": texte})
-        if final is None:
-            raise EchecLLM("trop d'appels d'outils")
-        if not contexte:
-            raise EchecLLM("réponse sans appel d'outil")
+        # Qwen n'accepte qu'un seul message système, en tête : on y ajoute les données
+        msgs[0] = {"role": "system", "content": msgs[0]["content"] + "\n\nDonnées disponibles (JSON) :\n" + texte}
+        final = _sans_reflexion(_appel(msgs, fin).choices[0].message.content)
 
     if time.monotonic() > fin:
         raise EchecLLM("délai dépassé")
@@ -208,6 +188,41 @@ def repondre_llm(store: BaseStore, mf: str, mois: str, question: str, historique
             vus.add((c["type"], c["ref"]))
             uniques.append(c)
     return {"reponse": corps, "citations": uniques, "mode": "llm"}
+
+
+def _appel(msgs: list[dict], fin: float, tools: list | None = None):
+    restant = fin - time.monotonic()
+    if restant <= 0.5:
+        raise EchecLLM("délai dépassé")
+    kwargs = {"tools": tools} if tools else {}
+    # Qwen 3.5 : pas de phase de réflexion (latence), comme dans le test curl de l'équipe
+    extra = {} if config.LLM_THINKING else {"chat_template_kwargs": {"enable_thinking": False}}
+    return _client(restant).chat.completions.create(model=config.LLM_MODEL, messages=msgs, temperature=0.1,
+                                                    max_tokens=config.LLM_MAX_TOKENS, extra_body=extra, **kwargs)
+
+
+def _boucle_outils(store: BaseStore, mf: str, mois: str, msgs: list[dict], fin: float,
+                   contexte: list[str], citations_outils: list[dict]) -> str | None:
+    """Réponse finale, ou None si le modèle répond sans appeler d'outil (→ plan B)."""
+    for _ in range(5):
+        msg = _appel(msgs, fin, OUTILS).choices[0].message
+        if not msg.tool_calls:
+            return _sans_reflexion(msg.content) if contexte else None
+        msgs.append({"role": "assistant", "content": msg.content or "",
+                     "tool_calls": [{"id": tc.id, "type": "function", "function": {"name": tc.function.name, "arguments": tc.function.arguments}}
+                                    for tc in msg.tool_calls]})
+        for tc in msg.tool_calls:
+            try:
+                args = json.loads(tc.function.arguments or "{}")
+                res = executer_outil(store, tc.function.name, args, mf, mois)
+                if tc.function.name == "get_preuves":
+                    citations_outils.append({"type": "signal", "ref": res.get("code_signal")})
+            except (Introuvable, EchecLLM, json.JSONDecodeError) as e:
+                res = {"erreur": str(e)}
+            texte = json.dumps(res, ensure_ascii=False)
+            contexte.append(texte)
+            msgs.append({"role": "tool", "tool_call_id": tc.id, "content": texte})
+    raise EchecLLM("trop d'appels d'outils")
 
 
 def repondre_modele_texte(store: BaseStore, mf: str, mois: str, question: str) -> dict:

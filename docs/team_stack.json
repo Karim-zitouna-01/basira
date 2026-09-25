@@ -1,0 +1,11 @@
+{
+  "confirmed_by_c_and_d": false,
+  "models": [
+    {"name": "Régression logistique L2, poids non négatifs", "owner": "C", "pretrained": false, "status": "Prévu par la spécification; implémentation à confirmer"},
+    {"name": "Qwen 3.5 9B", "owner": "C", "pretrained": true, "status": "Prévu localement; identifiant exact et outil de service à confirmer"}
+  ],
+  "libraries": {
+    "C": ["scikit-learn (prévu)", "FastAPI (prévu)", "serveur LLM à confirmer"],
+    "D": ["Next.js (prévu)", "React (prévu)", "Tailwind CSS (prévu)", "TypeScript (prévu)", "bibliothèque de graphiques à confirmer"]
+  }
+}

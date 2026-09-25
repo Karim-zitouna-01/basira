@@ -126,7 +126,9 @@ LLM_BASE_URL = os.environ.get("LLM_BASE_URL", "")
 LLM_MODEL = os.environ.get("LLM_MODEL", "qwen3.5:9b")
 LLM_API_KEY = os.environ.get("LLM_API_KEY", "ollama")
 LLM_TOOLS = os.environ.get("LLM_TOOLS", "1") == "1"
-LLM_TIMEOUT = float(os.environ.get("LLM_TIMEOUT", "20"))
+LLM_TIMEOUT = float(os.environ.get("LLM_TIMEOUT", "30"))
+LLM_THINKING = os.environ.get("LLM_THINKING", "0") == "1"  # 0 → enable_thinking=false (Qwen 3.5, latence)
+LLM_MAX_TOKENS = int(os.environ.get("LLM_MAX_TOKENS", "700"))
 
 
 def fmt_dt(montant: float) -> str:

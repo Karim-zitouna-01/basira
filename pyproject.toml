@@ -8,10 +8,12 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.141.1",
+    "networkx>=3.7",
     "numpy>=2.5.3",
     "openai>=3.19.2",
     "pandas>=3.0.6",
     "pyarrow>=25.0.1",
+    "reportlab>=5.0.1",
     "scikit-learn>=1.9.1",
     "uvicorn[standard]>=0.54.0",
 ]
