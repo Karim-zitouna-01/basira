@@ -9,6 +9,7 @@ import time
 import pandas as pd
 
 from . import config, evaluate, features, io, score, train
+from . import enjeux as enjeux_c
 
 ATTENDUS = {  # contrat §7 : segments acceptés au mois 2026-08, signaux attendus parmi les contributions
     "1000001BAM000": ({"PRIORITAIRE"}, ["COH_IMPORT_VS_CA", "CHG_IMPORTS", "CHG_NOUVEAUX_FOURNISSEURS", "RES_FOURNISSEUR_PARTAGE", "CMB_IMPORT_X_NOUV_FOURN"]),
@@ -65,6 +66,13 @@ def main() -> None:
         print("  Exclus : " + ", ".join(e["code_signal"] for e in modele["signaux_exclus"]))
 
     enjeux = io.enjeux()
+    try:
+        enjeux = enjeux_c.calculer(enjeux)
+        enjeux_c.ecrire(enjeux)
+        n_c = enjeux[enjeux["mois"] == config.MOIS_COURANT]["source_enjeu"].eq("C").sum()
+        print(f"Enjeu complété par C (douane sous-évaluée, imports excédentaires) : {n_c} entreprises en {config.MOIS_COURANT}")
+    except (FileNotFoundError, KeyError) as e:
+        print(f"Enjeu de B seul (complément C impossible : {e})")
     contrib = io.contribuables()
     scores = score.scorer(X, modele, sig, enjeux, contrib, controles)
     score.ecrire(scores)

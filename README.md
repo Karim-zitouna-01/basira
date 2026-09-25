@@ -1,27 +1,55 @@
-# Basira — lot C : score appris, évaluation, API, assistant
+# Basira — dépôt intégré (lots A, B, C ; D à venir)
 
-Contrat d'intégration : `idea/contrat_integration.md` (source unique de vérité). Ce dépôt contient `scoring/` et `api/`.
+Score de risque de conformité dynamique et explicable. Contrat d'intégration : `docs/specifications/contrat_integration.md`.
+
+| Lot | Dossier | Rôle | Documentation |
+|---|---|---|---|
+| A | `generation/`, `tools/lan_forward.py` | monde synthétique (`data/raw`, `data/graphe`) | `docs/lot_A/README.md` |
+| B | `signaux/`, `scripts/benchmark.sh` | 16 signaux, preuves, enjeux, pairs (`data/signaux`), note de synthèse PDF | `docs/lot_B/` |
+| C | `scoring/`, `api/` | score appris, enjeu complété, évaluation, API, assistant (`data/scores`) | ce fichier |
+| D | `web/` (à venir) | interface Next.js | `docs/specifications/member_D_task.md` |
 
 ## Installation (WSL / Linux, avec uv)
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh   # si uv n'est pas installé
-uv sync                                            # crée .venv et installe les dépendances
+uv sync                                            # crée .venv et installe les dépendances (Python 3.13)
 ```
 
-## Commandes
+## Pipeline complet (≈ 5 min)
+
+```bash
+uv run python -m generation.run --n 5250 --seed 2026   # A : ~1 min, 84 contrôles de cohérence
+uv run python -m signaux.run --data-dir data          # B : ~250 s, 2 016 000 lignes
+uv run python -m signaux.checks --data-dir data       # B : contrôle des héros → data/signaux/controle_heros.md
+uv run python -m scoring.run                          # C : ~7 s, modèle, enjeux, scores, héros, évaluation
+```
+
+## Lancer l'API
+
+```bash
+# sans LLM (réponses modele_texte) :
+BASIRA_MODE=real uv run uvicorn api.main:app --host 0.0.0.0 --port 8000
+# avec le Qwen distant (via le point d'accès) :
+LLM_BASE_URL=http://10.165.184.86:8200/v1 BASIRA_MODE=real uv run uvicorn api.main:app --host 0.0.0.0 --port 8000
+# vérifier le LLM depuis WSL avant la démo :
+curl http://10.165.184.86:8200/v1/chat/completions -H 'Content-Type: application/json' \
+  -d '{"messages":[{"role":"user","content":"Bonjour"}],"chat_template_kwargs":{"enable_thinking":false}}'
+```
+
+`GET /api/sante` indique le mode (`mock`/`real`) et si un LLM est configuré. Démarrage en mode real : ~11 s.
+
+## Autres commandes
 
 | Quoi | Commande |
 |---|---|
-| Régénérer les mocks du contrat (`data/mock/`) | `uv run python -m api.mocks` |
-| API sur les mocks (pour D, dès 17h) | `BASIRA_MODE=mock uv run uvicorn api.main:app --host 0.0.0.0 --port 8000` |
-| Scoring + évaluation sur les données de A/B (`data/`) | `uv run python -m scoring.run` |
-| API sur les vraies données | `BASIRA_MODE=real uv run uvicorn api.main:app --host 0.0.0.0 --port 8000` |
-| Données de dev de C (`data/dev/`, avant les livraisons A/B) | `uv run python -m scoring.dev_fixtures` puis `BASIRA_DATA_DIR=data/dev uv run python -m scoring.run` |
+| API sur les mocks du contrat | `BASIRA_MODE=mock uv run uvicorn api.main:app --host 0.0.0.0 --port 8000` |
+| Régénérer les mocks (`data/mock/`) | `uv run python -m api.mocks` |
+| Tester l'assistant sans le Qwen | `uv run uvicorn tools.faux_llm:app --port 8200` puis `LLM_BASE_URL=http://127.0.0.1:8200/v1` (`FAUX_LLM_SANS_OUTILS=1` simule un serveur sans tool-calling) |
 | Démo boucle d'apprentissage (avant/après) | `uv run python -m scoring.boucle [--demo]` |
-| Tests | `uv run pytest -q` |
-
-Pipeline complet (contrat §2) : `python -m generation.run && python -m signaux.run && uv run python -m scoring.run && uv run uvicorn api.main:app`.
+| Graphe interactif (A) | `uv run python -m generation.visualisation` → `data/graphe/explorateur.html` |
+| Note de synthèse PDF (B) | `uv run python -m signaux.report --data-dir data` |
+| Tests (A + B + C) | `uv run pytest -q` |
 
 ## Variables d'environnement
 
@@ -29,33 +57,43 @@ Pipeline complet (contrat §2) : `python -m generation.run && python -m signaux.
 |---|---|---|
 | `BASIRA_DATA_DIR` | `data` | dossier des données (`raw/`, `graphe/`, `signaux/`, `scores/`) |
 | `BASIRA_MODE` | `auto` | `mock`, `real`, ou `auto` (real si `scores/scores.parquet` existe) |
-| `LLM_BASE_URL` | vide | URL OpenAI-compatible du Qwen distant, ex. `http://192.168.1.20:11434/v1` (Ollama). Vide → mode `modele_texte` |
-| `LLM_MODEL` | `qwen3.5:9b` | nom du modèle côté serveur |
-| `LLM_TOOLS` | `1` | `0` = plan B : contexte JSON injecté dans le prompt, sans tool-calling |
-| `LLM_TIMEOUT` | `20` | budget en secondes ; au-delà → repli `modele_texte` |
+| `LLM_BASE_URL` | vide | URL OpenAI-compatible du Qwen distant (llama-server). Vide → mode `modele_texte` |
+| `LLM_MODEL` | `qwen3.5:9b` | nom du modèle (ignoré par llama-server) |
+| `LLM_TOOLS` | `1` | `0` = plan B forcé : contexte JSON dans le prompt, sans tool-calling (bascule automatique si le serveur refuse les outils) |
+| `LLM_THINKING` | `0` | `0` envoie `enable_thinking=false` (Qwen 3.5, latence) |
+| `LLM_TIMEOUT` | `30` | budget en secondes ; au-delà → repli `modele_texte` |
+| `LLM_MAX_TOKENS` | `700` | longueur maximale d'une réponse |
 
-## Entrées / sorties
+## Entrées / sorties de C
 
 - Lit : `data/signaux/{signaux,enjeux,groupes_pairs,pairs_stats}.parquet` (B), `data/raw/*.csv` et `data/graphe/aretes.csv` (A).
   `data/raw/verite_terrain.csv` n'est lu **que** par `scoring/evaluate.py`.
-- Écrit : `data/scores/{scores.parquet, modele.json, evaluation.json, decisions.csv, simulation_boucle.json}`.
+- Écrit : `data/scores/{scores.parquet, enjeux.parquet, modele.json, evaluation.json, decisions.csv, simulation_boucle.json}`.
 
 ## Méthode (résumé pour la note de synthèse)
 
 1. **Apprentissage** (`scoring/train.py`) : un exemple par contrôle passé ; caractéristiques = `valeur_norm` des 16 signaux au mois
    précédant l'avis + 2 combinaisons ; cible = redressement (mineur ou fraude significative, poids 2). Régression logistique L2,
    classes équilibrées, **poids ≥ 0** (signaux à coefficient négatif retirés puis réentraînement, listés dans `modele.json`).
-2. **Calibrage** : les petits redressements (≈ 1/3 des entreprises normales) placent l'intercept appris vers 35/100. On garde les
-   poids relatifs appris et on fixe l'échelle par deux ancres, calculées sur les seuls contrôles passés : entreprise sans signal = 5,
-   profil médian des fraudes significatives confirmées = 70. Détail dans `modele.json` → `calibrage`.
-3. **Score** (`scoring/score.py`) : `100·σ(b0 + Σ wᵢxᵢ)` + bonus « nouveau schéma » (0–15) ; points par signal dont la somme
-   = score − score de base ; segments, priorité = score × enjeu, action suggérée (contrat §6.3), résumé en français.
-4. **Évaluation** (`scoring/evaluate.py`) : top 50 par mois sur les 12 derniers mois, Basira vs règle statique type SAR vs hasard.
-5. **Assistant** (`api/assistant.py`) : un appel LLM avec 4 outils ; toute valeur chiffrée de la réponse doit figurer dans les données
+   Les signaux **jamais observés** dans les contrôles passés (sélectionnés par une règle type SAR) reçoivent un poids a priori égal à
+   la médiane des poids appris : absence de preuve ≠ absence de risque.
+2. **Calibrage par la capacité** : on garde les poids relatifs appris et on fixe l'échelle sans étiquette : entreprise sans signal = 5,
+   1 % des couples entreprise × mois les plus à risque ≥ 70 (seuil PRIORITAIRE). Une ancre sur les fraudes confirmées a été abandonnée :
+   leurs signaux étaient faibles au moment du contrôle, l'échelle explosait (30 % du portefeuille PRIORITAIRE).
+3. **Plancher « preuve forte »** (`scoring/score.py`) : un signal de cohérence (`COH_*`, écart entre deux sources indépendantes) ≥ 0.8
+   rend l'entreprise au moins PRIORITAIRE ; les points ajoutés sont attribués à ce signal (la somme des points = score − score de base).
+4. **Enjeu complété** (`scoring/enjeux.py`) : max(enjeu de B, droits éludés sur articles sous-évalués en douane + ventes cachées révélées
+   par une croissance des imports ≥ 50 points au-dessus de celle du CA). Priorité = score × enjeu.
+5. **Score** : `100·σ(b0 + Σ wᵢxᵢ)` + bonus « nouveau schéma » (0–15) ; segments, action suggérée (contrat §6.3), résumé en français.
+6. **Évaluation** (`scoring/evaluate.py`) : top 50 par mois sur les 12 derniers mois, Basira vs règle statique type SAR vs hasard.
+7. **Assistant** (`api/assistant.py`) : un appel LLM avec 4 outils ; toute valeur chiffrée de la réponse doit figurer dans les données
    des outils, sinon repli déterministe (`api/modele_texte.py`). L'assistant ne décide jamais.
 
-## Bibliothèques et modèles utilisés (lot C)
+Résultats sur le monde de A (seed 2026, 2026-08) : 207 PRIORITAIRE dont 73 % de fraudes actives ; top 50 mensuel : 87 % de fraudes
+contre 23 % pour la règle type SAR et 5 % au hasard (`data/scores/evaluation.json`).
 
-Python 3.13, uv · pandas, numpy, pyarrow · scikit-learn (LogisticRegression) · FastAPI, Uvicorn, Pydantic ·
-client `openai` (API compatible OpenAI) · **Qwen 3.5 9B** (modèle pré-entraîné, servi en local sur une autre machine,
-p. ex. via Ollama) · pytest, httpx.
+## Bibliothèques et modèles utilisés
+
+Python 3.13, uv · pandas 3, numpy, pyarrow · scikit-learn (LogisticRegression) · NetworkX (A) · ReportLab (B) · FastAPI, Uvicorn,
+Pydantic · client `openai` (API compatible OpenAI) · **Qwen 3.5 9B** (modèle pré-entraîné, servi par llama-server sur une autre
+machine du réseau) · pytest, httpx.

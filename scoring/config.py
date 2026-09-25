@@ -84,6 +84,9 @@ SEUIL_ACTIF = 0.5
 
 SEUILS = {"PRIORITAIRE": 70, "SURVEILLANCE": 40, "CONFIANCE": 15}
 BONUS_MAX = 15.0
+# Plancher « preuve forte » : écart très marqué entre deux sources indépendantes → au moins PRIORITAIRE
+SIGNAUX_PREUVE = tuple(c for c, lentille in SIGNAUX_B.items() if lentille == "COHERENCE")
+SEUIL_PREUVE = 0.8
 ENJEU_VERIFICATION = 100_000.0
 SIGNAUX_DOUANE = ("COH_VALEUR_REF", "CHG_NOUVELLES_CATEGORIES")
 

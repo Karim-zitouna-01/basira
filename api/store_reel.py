@@ -25,6 +25,39 @@ INDICATEURS = {"MARGE": "Marge apparente", "TVA_DED_SUR_COLL": "TVA déductible 
                "CA_PAR_SALARIE": "CA par salarié", "IMPORTS_SUR_CA": "Imports / CA"}
 MOIS_NOUVELLE_RELATION = 18
 
+# Phrase de repli quand B ne fournit pas de fait_fr (signal sous le seuil d'activation mais porteur de points).
+_FAITS_FAIBLES = {
+    "COH_IMPORT_VS_CA": "croissance des importations supérieure de {pts} points à celle du CA déclaré (6 mois)",
+    "COH_CLIENTS_VS_CA": "paiements déclarés par les clients égaux à {x} fois le CA TTC déclaré",
+    "COH_ADEB_VS_CA": "paiements publics égaux à {x} fois le CA déclaré sur 12 mois",
+    "COH_TVA_IMPORT": "TVA déduite sur importations égale à {x} fois la TVA payée en douane",
+    "COH_VALEUR_REF": "valeurs unitaires déclarées à {pct} du prix de référence",
+    "CHG_CA": "CA déclaré à {z} écarts-types de son niveau habituel",
+    "CHG_IMPORTS": "importations à {z} écarts-types au-dessus de leur niveau habituel",
+    "CHG_TVA_DEDUCTIBLE": "TVA déductible locale à {z} écarts-types au-dessus de son niveau habituel",
+    "CHG_NOUVEAUX_FOURNISSEURS": "{n} fournisseur(s) nouveau(x) sur la période récente",
+    "CHG_NOUVELLES_CATEGORIES": "{n} chapitre(s) SH importé(s) pour la première fois sur 3 mois",
+    "CHG_DEPOTS": "{n} déclaration(s) sur 6 non déposée(s) ou en retard de plus de 30 jours",
+    "PAI_MARGE": "marge apparente à {z} écarts-types sous celle des pairs",
+    "PAI_MAHALANOBIS": "profil à une distance {z} du centre de son groupe de pairs",
+    "RES_FOURNISSEUR_PARTAGE": "{n} entreprise(s) démarrent avec le même nouveau fournisseur",
+    "RES_COQUILLE": "{n} % des achats déclarés auprès de fournisseurs à profil coquille",
+    "RES_PROXIMITE_REDRESSE": "à {n} relation(s) d'une entreprise redressée pour fraude significative",
+}
+
+
+def _nombre(v: float, nd: int = 1) -> str:
+    return f"{v:.{nd}f}".replace(".", ",").rstrip("0").rstrip(",") if nd else f"{v:.0f}"
+
+
+def fait_faible(code: str, brute: float, v: float) -> str:
+    modele = _FAITS_FAIBLES.get(code)
+    if not modele or brute is None or not np.isfinite(brute):
+        return ""
+    texte = modele.format(pts=f"{brute:+.0f}".replace("-", "−"), x=_nombre(brute, 2), pct=f"{brute * 100:.0f} %",
+                          z=_nombre(brute, 1), n=_nombre(brute, 0))
+    return f"Signal faible ({_nombre(v, 2)} sur 1, sous le seuil d'activation) : {texte}."
+
 
 def _f(x, nd=3):
     if x is None or (isinstance(x, float) and np.isnan(x)):
@@ -97,7 +130,9 @@ class RealStore(BaseStore):
         self.noms_fe = dict(zip(fe["id_fournisseur"], fe["nom"])) if len(fe) else {}
         ap = lire_csv("ref_acheteurs_publics.csv", obligatoire=False)
         self.noms_ap = dict(zip(ap["id_acheteur_public"], ap["libelle"])) if len(ap) else {}
-        e = pd.read_parquet(config.SIGNAUX / "enjeux.parquet")
+        # enjeu complété par C (scoring/enjeux.py) s'il existe, sinon celui de B
+        complet = config.SCORES / "enjeux.parquet"
+        e = pd.read_parquet(complet if complet.exists() else config.SIGNAUX / "enjeux.parquet")
         self.enjeux = {(r["mf"], r["mois"]): r for r in e[["mf", "mois", "enjeu_estime", "enjeu_bas", "enjeu_haut", "confiance"]].to_dict("records")}
         ctl = lire_csv("historique_controles.csv", obligatoire=False)
         self.controles = defaultdict(list)
@@ -112,11 +147,11 @@ class RealStore(BaseStore):
         self.pairs_stats = {(r["groupe"], r["mois"], r["indicateur"]): r for r in pd.read_parquet(ps).to_dict("records")} if ps.exists() else {}
 
     def _charger_signaux(self):
-        cols = ["mf", "mois", "code_signal", "lentille", "valeur_norm", "fait_fr", "sources", "preuves"]
+        cols = ["mf", "mois", "code_signal", "lentille", "valeur_norm", "valeur_brute", "fait_fr", "sources", "preuves"]
         sig = pd.read_parquet(config.SIGNAUX / "signaux.parquet", columns=cols, filters=[("valeur_norm", ">", 0)])
         self.signaux: dict[tuple, dict] = defaultdict(dict)
-        for mf, mois, code, lent, v, fait, src, pr in sig.itertuples(index=False):
-            self.signaux[(mf, mois)][code] = (float(v), fait or "", _liste(src), _liste(pr))
+        for mf, mois, code, lent, v, brute, fait, src, pr in sig.itertuples(index=False):
+            self.signaux[(mf, mois)][code] = (float(v), fait or fait_faible(code, brute, v), _liste(src), _liste(pr))
 
     def _charger_series(self):
         d = lire_csv("declarations_mensuelles.csv")
@@ -190,7 +225,9 @@ class RealStore(BaseStore):
             a, b, fait = config.COMBINAISONS[code]
             va, vb = s.get(a, (0.0, "", [], [])), s.get(b, (0.0, "", [], []))
             v = va[0] * vb[0]
-            return (v, fait if v >= config.SEUIL_ACTIF else "", sorted(set(va[2]) | set(vb[2])), list(dict.fromkeys(va[3] + vb[3]))[:50])
+            if v < config.SEUIL_ACTIF:
+                fait = f"Signal faible ({_nombre(v, 2)} sur 1) : combinaison partielle de {a} et {b}."
+            return (v, fait, sorted(set(va[2]) | set(vb[2])), list(dict.fromkeys(va[3] + vb[3]))[:50])
         return s.get(code, (0.0, "", [], []))
 
     def _est_coquille(self, mf, mois) -> bool:

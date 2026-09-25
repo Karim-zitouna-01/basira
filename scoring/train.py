@@ -4,7 +4,9 @@ Cible : 1 si REDRESSEMENT_MINEUR ou FRAUDE_SIGNIFICATIVE (poids d'échantillon 2
 Caractéristiques : valeur_norm des signaux au mois précédant date_avis (pas de fuite du futur).
 Contrainte : poids ≥ 0 (un signal d'alerte ne fait jamais baisser le risque) → on retire les signaux
 à coefficient négatif et on réentraîne, jusqu'à ce que tous les poids restants soient ≥ 0.
-Calibrage : échelle fixée par deux ancres (voir `calibrer`), poids relatifs inchangés.
+Signal jamais observé dans les contrôles passés : poids a priori = médiane des poids positifs appris (les contrôles
+passés, choisis par une règle type SAR, n'ont jamais regardé ces schémas : absence de preuve ≠ absence de risque).
+Calibrage : échelle fixée par capacité (voir `calibrer`), poids relatifs inchangés.
 `verite_terrain` n'est jamais lu ici.
 """
 
@@ -19,7 +21,8 @@ from . import config
 
 POSITIFS = {"REDRESSEMENT_MINEUR", "FRAUDE_SIGNIFICATIVE"}
 ANCRE_BASE = 5.0      # score d'une entreprise sans aucun signal
-ANCRE_FRAUDE = 70.0   # score du profil médian des fraudes significatives confirmées (= seuil PRIORITAIRE)
+ANCRE_CAPACITE = 70.0  # score atteint par le quantile CAPACITE des couples entreprise × mois (= seuil PRIORITAIRE)
+CAPACITE = 0.01        # ~1 % du portefeuille : ordre de grandeur de la capacité de contrôle mensuelle
 CATEGORIES = POSITIFS | {"CONFORME"}
 
 
@@ -40,7 +43,7 @@ def jeu_entrainement(X: pd.DataFrame, controles: pd.DataFrame, extra: pd.DataFra
     return out.reset_index(drop=True)
 
 
-def ajuster(jeu: pd.DataFrame, C: float = 1.0) -> dict:
+def ajuster(jeu: pd.DataFrame, X: pd.DataFrame, C: float = 1.0) -> dict:
     actifs = list(config.FEATURES)
     exclus: list[dict] = []
     y, w = jeu["y"].to_numpy(), jeu["poids"].to_numpy()
@@ -62,7 +65,14 @@ def ajuster(jeu: pd.DataFrame, C: float = 1.0) -> dict:
             exclus.append({"code_signal": f, "raison": f"coefficient négatif ({coefs[f]:.3f}) : retiré puis réentraînement"})
         actifs = [f for f in actifs if f not in negatifs]
     appris = np.array([coefs.get(f, 0.0) for f in config.FEATURES])
-    calib = calibrer(jeu, appris)
+    positifs = appris[appris > 0]
+    a_priori = float(np.median(positifs)) if len(positifs) else 1.0
+    jamais = {e["code_signal"] for e in exclus if e["raison"].startswith("jamais")}
+    for e in exclus:
+        if e["code_signal"] in jamais:
+            e["raison"] += f" : poids a priori {a_priori:.3f} (médiane des poids appris)"
+    appris = np.array([a_priori if f in jamais else v for f, v in zip(config.FEATURES, appris)])
+    calib = calibrer(X, appris)
     poids = {f: round(float(v * calib["facteur_echelle"]), 6) for f, v in zip(config.FEATURES, appris)}
     return {
         "intercept": round(calib["intercept"], 6),
@@ -72,7 +82,8 @@ def ajuster(jeu: pd.DataFrame, C: float = 1.0) -> dict:
         "nb_positifs": int(jeu["y"].sum()),
         "definition_cible": "REDRESSEMENT_MINEUR ou FRAUDE_SIGNIFICATIVE (poids 2)",
         "methode": "Régression logistique L2 (scikit-learn), class_weight équilibré, poids contraints ≥ 0 (retrait itératif), "
-                   "puis calibrage de l'échelle sur deux ancres",
+                   "poids a priori pour les signaux jamais observés en contrôle, puis calibrage de l'échelle par la capacité "
+                   "(1 % des couples entreprise × mois ≥ 70) ; plancher 70 si une preuve de cohérence est forte (score.py)",
         "signaux_exclus": exclus,
         "calibrage": {**calib, "intercept_appris": round(float(m.intercept_[0]), 6),
                       "poids_appris": {f: round(float(v), 6) for f, v in zip(config.FEATURES, appris)}},
@@ -83,27 +94,28 @@ def _logit(p: float) -> float:
     return float(np.log(p / (1 - p)))
 
 
-def calibrer(jeu: pd.DataFrame, w: np.ndarray, base: float = ANCRE_BASE, fraude_type: float = ANCRE_FRAUDE) -> dict:
+def calibrer(X: pd.DataFrame, w: np.ndarray, base: float = ANCRE_BASE, capacite: float = CAPACITE,
+             ancre: float = ANCRE_CAPACITE) -> dict:
     """Le taux de petits redressements (~1/3 des entreprises normales) place l'intercept appris vers 35/100 : aucune
-    entreprise ne pourrait être CONFIANCE et la moitié du portefeuille serait en SURVEILLANCE. On garde les poids
-    relatifs appris (donc le classement et les explications) et on fixe l'échelle par deux ancres, calculées
-    uniquement sur les contrôles passés :
+    entreprise ne pourrait être CONFIANCE. Une ancre sur les fraudes confirmées ne tient pas non plus : les 15 fraudes
+    significatives avaient des signaux faibles au moment de l'avis, l'échelle explose (×10) et 30 % du portefeuille
+    passe PRIORITAIRE. On garde les poids relatifs appris (donc le classement et les explications) et on fixe
+    l'échelle par la capacité de contrôle, sans aucune étiquette :
       - entreprise sans aucun signal → score `base` (5) ;
-      - gain médian des contrôles FRAUDE_SIGNIFICATIVE au moment de l'avis → score `fraude_type` (70, seuil PRIORITAIRE).
+      - quantile 1 − `capacite` des gains sur tous les couples entreprise × mois → score `ancre` (70, seuil PRIORITAIRE).
     """
-    gain = jeu[config.FEATURES].to_numpy() @ w
-    fraudes = gain[jeu["poids"].to_numpy() == 2.0]
-    ref = float(np.median(fraudes)) if len(fraudes) else 0.0
+    gain = X[config.FEATURES].to_numpy() @ w
+    ref = float(np.quantile(gain, 1 - capacite))
     if ref <= 1e-6:
-        ref = float(np.quantile(gain, 0.9)) if gain.max() > 0 else 1.0
+        ref = float(gain.max()) if gain.max() > 0 else 1.0
     b0 = _logit(base / 100)
-    k = (_logit(fraude_type / 100) - b0) / ref
-    return {"intercept": b0, "facteur_echelle": round(k, 6), "ancre_base": base, "ancre_fraude_type": fraude_type,
-            "gain_median_fraudes": round(ref, 6), "nb_fraudes": int(len(fraudes))}
+    k = (_logit(ancre / 100) - b0) / ref
+    return {"intercept": b0, "facteur_echelle": round(k, 6), "ancre_base": base, "ancre_capacite": ancre,
+            "capacite": capacite, "gain_quantile_capacite": round(ref, 6)}
 
 
 def entrainer(X: pd.DataFrame, controles: pd.DataFrame, extra: pd.DataFrame | None = None) -> dict:
-    return ajuster(jeu_entrainement(X, controles, extra))
+    return ajuster(jeu_entrainement(X, controles, extra), X)
 
 
 def ecrire(modele: dict) -> None:

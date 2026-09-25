@@ -4,6 +4,8 @@ score_sans_bonus = 100·σ(b0 + Σ w_i x_i) ; score_base = 100·σ(b0)
 points_i = (w_i x_i / Σ w_j x_j) × (score_sans_bonus − score_base)   → la somme des points = score − score_base
 bonus « nouveau schéma » (0–15) : ≥ 2 signaux très forts (valeur_norm ≥ 0.8) dont le poids appris est sous la médiane
 des poids positifs → bonus = min(15, 5 × n × moyenne de leurs valeur_norm), affiché comme contribution NOUVEAU_SCHEMA.
+plancher « preuve forte » : si un signal COH_* atteint valeur_norm ≥ 0.8, score_sans_bonus ≥ 70 (seuil PRIORITAIRE) ;
+les points ajoutés sont attribués à ce signal.
 """
 
 import numpy as np
@@ -29,6 +31,16 @@ def calculer(X: pd.DataFrame, modele: dict) -> pd.DataFrame:
     s_base = 100 * _sigmoide(b0)
     with np.errstate(invalid="ignore", divide="ignore"):
         pts = np.where(S[:, None] > 0, lin / S[:, None], 0.0) * (s_sans - s_base)[:, None]
+
+    # plancher « preuve forte » : un écart entre sources (COH_*) très marqué suffit à rendre l'entreprise prioritaire ;
+    # les points ajoutés vont au signal de cohérence le plus fort (la somme des points reste = score − score_base)
+    idx_coh = np.array([config.FEATURES.index(c) for c in config.SIGNAUX_PREUVE])
+    j_coh = idx_coh[Xv[:, idx_coh].argmax(axis=1)]
+    lignes = np.arange(len(Xv))
+    forte = Xv[lignes, j_coh] >= config.SEUIL_PREUVE
+    plancher = np.where(forte, np.maximum(s_sans, config.SEUILS["PRIORITAIRE"]) - s_sans, 0.0)
+    pts[lignes, j_coh] += plancher
+    s_sans = s_sans + plancher
 
     positifs = W[W > 0]
     mediane = np.median(positifs) if len(positifs) else 0.0
