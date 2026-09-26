@@ -95,8 +95,9 @@ curl http://192.168.137.222:8200/v1/chat/completions -H 'Content-Type: applicati
 1. **Apprentissage** (`scoring/train.py`) : un exemple par contrôle passé ; caractéristiques = `valeur_norm` des 16 signaux au mois
    précédant l'avis + 2 combinaisons ; cible = redressement (mineur ou fraude significative, poids 2). Régression logistique L2,
    classes équilibrées, **poids ≥ 0** (signaux à coefficient négatif retirés puis réentraînement, listés dans `modele.json`).
-   Les signaux **jamais observés** dans les contrôles passés (sélectionnés par une règle type SAR) reçoivent un poids a priori égal à
-   la médiane des poids appris : absence de preuve ≠ absence de risque.
+   Les signaux **jamais observés** dans les contrôles passés (sélectionnés par une règle type SAR) **ou à coefficient négatif**
+   reçoivent un poids a priori égal à la médiane des poids appris : la règle SAR a sur-sélectionné certains signaux (CHG_CA,
+   CHG_DEPOTS…) sans redressement, ce qui produit un coefficient négatif par biais de sélection, pas une baisse réelle du risque.
 2. **Calibrage par la capacité** : on garde les poids relatifs appris et on fixe l'échelle sans étiquette : entreprise sans signal = 5,
    1 % des couples entreprise × mois les plus à risque ≥ 70 (seuil PRIORITAIRE). Une ancre sur les fraudes confirmées a été abandonnée :
    leurs signaux étaient faibles au moment du contrôle, l'échelle explosait (30 % du portefeuille PRIORITAIRE).
@@ -109,8 +110,13 @@ curl http://192.168.137.222:8200/v1/chat/completions -H 'Content-Type: applicati
 7. **Assistant** (`api/assistant.py`) : un appel LLM avec 4 outils ; toute valeur chiffrée de la réponse doit figurer dans les données
    des outils, sinon repli déterministe (`api/modele_texte.py`). L'assistant ne décide jamais.
 
-Résultats sur le monde de A (seed 2026, 2026-08) : 207 PRIORITAIRE dont 73 % de fraudes actives ; top 50 mensuel : 87 % de fraudes
-contre 23 % pour la règle type SAR et 5 % au hasard (`data/scores/evaluation.json`).
+Résultats sur le monde de A (seed 2026, 2026-08) : 208 PRIORITAIRE dont 73 % de fraudes actives ; top 50 mensuel : 87 % de fraudes
+contre 23 % pour la règle type SAR et 5 % au hasard (`data/scores/evaluation.json`). Validation (`validation_modele` du même fichier) :
+un modèle entraîné sans aucun contrôle de la période de test garde 87 % ; les poids appris ne battent pas des poids égaux
+(AUC en validation croisée 0,63 contre 0,62) : la performance vient du croisement des sources.
+
+Note de synthèse : `uv run python -m signaux.report --final` → `docs/note_synthese.pdf` (chiffres lus dans `data/scores/` et
+`data/signaux/`, inventaire dans `docs/team_stack.json`).
 
 ## Bibliothèques et modèles utilisés
 

@@ -1,11 +1,14 @@
 {
-  "confirmed_by_c_and_d": false,
+  "confirmed_by_c_and_d": true,
   "models": [
-    {"name": "Régression logistique L2, poids non négatifs", "owner": "C", "pretrained": false, "status": "Prévu par la spécification; implémentation à confirmer"},
-    {"name": "Qwen 3.5 9B", "owner": "C", "pretrained": true, "status": "Prévu localement; identifiant exact et outil de service à confirmer"}
+    {"name": "Régression logistique L2 à poids non négatifs (scikit-learn), 16 signaux + 2 combinaisons", "owner": "C", "pretrained": false, "status": "entraînée sur les contrôles passés synthétiques (data/scores/modele.json)"},
+    {"name": "Qwen 3.5 9B (poids ouverts)", "owner": "C", "pretrained": true, "status": "assistant de l'inspecteur, sans réentraînement ; servi en local par llama.cpp (llama-server, API compatible OpenAI) sur un PC du réseau local, aucune donnée ne sort"},
+    {"name": "Qwen (local, via llama-server)", "owner": "A", "pretrained": true, "status": "étape hors ligne facultative : vocabulaire des noms d'entreprises fictives (generation/vocab/llm_vocab.json) ; la génération des données n'appelle pas le modèle"}
   ],
   "libraries": {
-    "C": ["scikit-learn (prévu)", "FastAPI (prévu)", "serveur LLM à confirmer"],
-    "D": ["Next.js (prévu)", "React (prévu)", "Tailwind CSS (prévu)", "TypeScript (prévu)", "bibliothèque de graphiques à confirmer"]
+    "A (données synthétiques)": ["numpy", "pandas", "networkx", "vis-network (explorateur du graphe hors ligne)"],
+    "B (signaux)": ["numpy", "pandas", "pyarrow", "reportlab"],
+    "C (score, API, assistant)": ["scikit-learn", "FastAPI", "Uvicorn", "Pydantic", "client openai (API compatible OpenAI)"],
+    "D (interface)": ["React 19", "Vite", "Mantine", "Tailwind CSS", "React Flow (@xyflow/react)", "dagre", "dc.js", "Crossfilter", "D3", "react-markdown", "lucide-react", "React Bits (animation LatticeLoader)", "polices IBM Plex Mono et Public Sans"]
   }
 }

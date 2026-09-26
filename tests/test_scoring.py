@@ -60,6 +60,8 @@ def test_poids_positifs_et_calibrage():
                         "categorie_resultat": cat})
     m = train.entrainer(X, ctl)
     assert all(w >= 0 for w in m["poids"].values())
-    assert m["poids"]["CHG_CA"] == 0 and "CHG_CA" in [e["code_signal"] for e in m["signaux_exclus"]]
-    assert m["poids"]["COH_IMPORT_VS_CA"] == max(m["poids"].values())
+    # CHG_CA retiré de l'ajustement puis poids a priori (médiane des poids appris) : jamais négatif, jamais dominant
+    exclus = {e["code_signal"]: e["raison"] for e in m["signaux_exclus"]}
+    assert "CHG_CA" in exclus and "a priori" in exclus["CHG_CA"]
+    assert 0 < m["poids"]["CHG_CA"] < m["poids"]["COH_IMPORT_VS_CA"] == max(m["poids"].values())
     assert abs(100 / (1 + np.exp(-m["intercept"])) - train.ANCRE_BASE) < 1e-6

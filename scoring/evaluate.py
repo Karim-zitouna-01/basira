@@ -113,6 +113,66 @@ def evaluer(scores: pd.DataFrame, X: pd.DataFrame, contribuables: pd.DataFrame, 
     }
 
 
+def _detection_top_n(priorite: pd.Series, vt: pd.DataFrame, n: int) -> float:
+    """Part moyenne de fraudes actives dans le top n de `priorite` (index mf × mois), sur la période de test."""
+    fraude = ~vt["scenario"].isin(config.SCENARIOS_NON_FRAUDE)
+    debut = vt["mois_debut_scenario"].fillna("9999-99")
+    taux = []
+    for mois in config.MOIS_TEST:
+        top = priorite.xs(mois, level="mois").sort_values(ascending=False, kind="stable").head(n).index
+        taux.append(np.mean([bool(fraude.get(m, False) and debut.get(m, "9999-99") <= mois) for m in top]))
+    return round(float(np.mean(taux)), 3)
+
+
+def valider(X: pd.DataFrame, controles: pd.DataFrame, scores: pd.DataFrame, vt: pd.DataFrame,
+            n: int = config.TOP_N) -> dict:
+    """Robustesse de l'apprentissage : les poids appris apportent-ils plus que des poids égaux, et le résultat tient-il
+    avec un modèle entraîné sans aucun contrôle de la période de test ?"""
+    from sklearn.metrics import roc_auc_score
+    from sklearn.model_selection import StratifiedKFold
+
+    from . import score, train
+
+    F = config.FEATURES
+    jeu = train.jeu_entrainement(X, controles)
+    auc_appris, auc_egaux = [], []
+    for a, b in StratifiedKFold(5, shuffle=True, random_state=config.SEED).split(jeu, jeu["y"]):
+        m = train.ajuster(jeu.iloc[a].reset_index(drop=True), X)
+        t = jeu.iloc[b]
+        auc_appris.append(roc_auc_score(t["y"], t[F].to_numpy() @ np.array([m["poids"][f] for f in F]), sample_weight=t["poids"]))
+        auc_egaux.append(roc_auc_score(t["y"], t[F].sum(axis=1), sample_weight=t["poids"]))
+
+    vt = vt.set_index("mf")
+    enjeu = scores.set_index(["mf", "mois"])["enjeu_estime"].reindex(X.index).fillna(0.0)
+    avant = jeu[jeu["mois_caracteristiques"] < config.MOIS_TEST[0]].reset_index(drop=True)
+    hors_periode = score.calculer(X, train.ajuster(avant, X))["score"] / 100 * enjeu
+    c = train.calibrer(X, np.ones(len(F)))
+    egaux = score.calculer(X, {"intercept": c["intercept"], "poids": {f: c["facteur_echelle"] for f in F}})["score"] / 100 * enjeu
+
+    dernier = scores[scores["mois"] == config.MOIS_COURANT].set_index("mf")
+    fraude = ~vt["scenario"].isin(config.SCENARIOS_NON_FRAUDE)
+    debut = vt["mois_debut_scenario"].fillna("9999-99")
+    active = pd.Series([bool(fraude.get(m, False) and debut.get(m, "9999-99") <= config.MOIS_COURANT) for m in dernier.index],
+                       index=dernier.index)
+    prio = dernier["segment"] == "PRIORITAIRE"
+    par_scenario = (pd.DataFrame({"scenario": vt["scenario"].reindex(dernier.index), "prio": prio})
+                    .groupby("scenario")["prio"].agg(["size", "mean"]))
+    return {
+        "auc_validation_croisee_poids_appris": round(float(np.mean(auc_appris)), 3),
+        "auc_validation_croisee_poids_egaux": round(float(np.mean(auc_egaux)), 3),
+        "nb_controles": int(len(jeu)),
+        "detection_top_n_modele_sans_controles_periode_test": _detection_top_n(hors_periode, vt, n),
+        "nb_controles_avant_periode_test": int(len(avant)),
+        "detection_top_n_poids_egaux": _detection_top_n(egaux, vt, n),
+        "prioritaires_mois_courant": int(prio.sum()),
+        "precision_prioritaires_mois_courant": round(float(active[prio].mean()), 3) if prio.any() else None,
+        "part_prioritaire_par_scenario": {k: {"nb": int(r["size"]), "part": round(float(r["mean"]), 3)}
+                                          for k, r in par_scenario.iterrows()},
+        "definition": "AUC : contrôles passés, validation croisée à 5 plis (0,5 = hasard). Détection : même définition que "
+                      "le top N principal (priorité = score × enjeu). Précision : part de fraudes actives parmi les PRIORITAIRE.",
+    }
+
+
 def ecrire(ev: dict) -> None:
     config.SCORES.mkdir(parents=True, exist_ok=True)
     (config.SCORES / "evaluation.json").write_text(json.dumps(ev, ensure_ascii=False, indent=2), encoding="utf-8")

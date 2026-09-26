@@ -82,12 +82,19 @@ def main() -> None:
     verifier_heros(scores)
 
     if (config.RAW / "verite_terrain.csv").exists():
-        ev = evaluate.evaluer(scores, X, contrib, io.verite_terrain())
+        vt = io.verite_terrain()
+        ev = evaluate.evaluer(scores, X, contrib, vt)
+        ev["validation_modele"] = evaluate.valider(X, controles, scores, vt)
         evaluate.ecrire(ev)
         print("\nÉvaluation (top %d, %s) :" % (ev["top_n"], ev["periode_test"]))
         for m in ev["methodes"]:
             print(f"  {m['nom']:<28} détection {m['taux_detection_top_n']:.0%}  montant/contrôle {config.fmt_dt(m['montant_moyen_par_controle']):>12}"
                   f"  croissance légitime {m['fausses_alertes_croissance_legitime']}  avance {m['avance_detection_mois']}")
+        v = ev["validation_modele"]
+        print(f"  Validation : AUC (5 plis) appris {v['auc_validation_croisee_poids_appris']} / égaux {v['auc_validation_croisee_poids_egaux']} ; "
+              f"top {ev['top_n']} sans contrôles de la période de test {v['detection_top_n_modele_sans_controles_periode_test']:.0%}, "
+              f"poids égaux {v['detection_top_n_poids_egaux']:.0%} ; PRIORITAIRE {v['prioritaires_mois_courant']} "
+              f"(précision {v['precision_prioritaires_mois_courant']:.0%})")
     else:
         print("\n(verite_terrain.csv absent : évaluation non calculée)")
     print(f"\nTerminé en {time.time() - t0:.1f} s → {config.SCORES}")

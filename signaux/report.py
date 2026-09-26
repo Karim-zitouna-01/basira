@@ -1,8 +1,11 @@
-"""Generate the required French synthesis, with no invented evaluation results."""
+"""Generate the required French synthesis note (≤ 2 pages), with no invented evaluation results.
+
+Every figure comes from a pipeline output: scores/evaluation.json, scores/modele.json,
+scores/simulation_boucle.json, signaux/rapport_execution.json and docs/team_stack.json.
+"""
 
 import argparse
 import json
-from importlib.metadata import version
 from pathlib import Path
 from xml.sax.saxutils import escape
 
@@ -10,188 +13,202 @@ from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
-from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 PROJECT = Path(__file__).resolve().parents[1]
 
 
+def _lire(path):
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+
+
+def _dt(montant):
+    return f"{montant:,.0f}".replace(",", " ") + " DT"
+
+
+def _pct(x):
+    return f"{100 * x:.0f} %"
+
+
 def generate_report(data_dir, output, stack_path, final=False):
-    evaluation_path = data_dir / "scores" / "evaluation.json"
     stack = json.loads(stack_path.read_text(encoding="utf-8"))
-    evaluation = (
-        json.loads(evaluation_path.read_text(encoding="utf-8"))
-        if evaluation_path.exists()
-        else None
-    )
+    evaluation = _lire(data_dir / "scores" / "evaluation.json")
     if final and (evaluation is None or not stack.get("confirmed_by_c_and_d")):
         raise ValueError(
             "Version finale impossible : fournir evaluation.json de C et confirmer docs/team_stack.json avec C et D."
         )
+    modele = _lire(data_dir / "scores" / "modele.json") or {}
+    boucle = _lire(data_dir / "scores" / "simulation_boucle.json")
+    run = _lire(data_dir / "signaux" / "rapport_execution.json")
+
     output.parent.mkdir(parents=True, exist_ok=True)
     styles = getSampleStyleSheet()
-    styles.add(
-        ParagraphStyle(name="BodyFR", fontName="Helvetica", fontSize=9, leading=12, spaceAfter=7)
-    )
-    styles.add(
-        ParagraphStyle(
-            name="TitleFR",
-            fontName="Helvetica-Bold",
-            fontSize=17,
-            leading=21,
-            alignment=TA_CENTER,
-            spaceAfter=12,
-        )
-    )
+    styles.add(ParagraphStyle(name="BodyFR", fontName="Helvetica", fontSize=8.6, leading=11, spaceAfter=4))
+    styles.add(ParagraphStyle(name="PuceFR", parent=styles["BodyFR"], leftIndent=9, bulletIndent=0, spaceAfter=2))
+    styles.add(ParagraphStyle(name="TitreFR", fontName="Helvetica-Bold", fontSize=15, leading=18, alignment=TA_CENTER, spaceAfter=4))
+    styles.add(ParagraphStyle(name="SousTitreFR", parent=styles["BodyFR"], alignment=TA_CENTER, textColor=colors.HexColor("#4d5563"), spaceAfter=6))
+    styles.add(ParagraphStyle(name="H2FR", fontName="Helvetica-Bold", fontSize=10.5, leading=13, spaceBefore=5, spaceAfter=3, keepWithNext=1,
+                              textColor=colors.HexColor("#174a7e")))
     story = []
 
     def paragraph(text):
         story.append(Paragraph(text, styles["BodyFR"]))
 
-    def heading(text):
-        story.append(Paragraph(text, styles["Heading2"]))
+    def puce(text):
+        story.append(Paragraph(text, styles["PuceFR"], bulletText="•"))
 
-    story.append(Paragraph("BASIRA — Note de synthèse", styles["TitleFR"]))
-    paragraph(
-        "<b>Défi principal T20 · Défi secondaire T7.</b> Priorisation dynamique et explicable des contrôles par recoupement des déclarations fiscales, des importations et des paiements."
-    )
+    def heading(text):
+        story.append(Paragraph(text, styles["H2FR"]))
+
+    nb_ent = f"{run['entreprises']:,}".replace(",", " ") if run else "5 250"
+    story.append(Paragraph("BASIRA — Note de synthèse", styles["TitreFR"]))
+    story.append(Paragraph(
+        "Défi principal <b>T20 — Risk scoring dynamique de la conformité des entreprises</b> · défi complémentaire T7 "
+        "(croisement des données fiscales, douanières et de paiement). Hackathon « IA &amp; Finances publiques », septembre 2026.",
+        styles["SousTitreFR"]))
     if not final:
-        paragraph(
-            "<b>Version de travail du lot B.</b> Les résultats d'impact et l'inventaire final de C/D restent à compléter s'ils ne sont pas fournis. Aucun chiffre d'exemple du contrat n'est présenté comme un résultat mesuré."
-        )
-    heading("1. Problème et approche")
+        paragraph("<b>Version de travail.</b> Les résultats d'impact et l'inventaire final restent à compléter s'ils ne sont pas "
+                  "fournis. Aucun chiffre d'exemple du contrat n'est présenté comme un résultat mesuré.")
+
+    heading("1. Problème traité")
     paragraph(
-        "L'inspecteur dispose d'une capacité de contrôle limitée. Basira compare les déclarations aux observations des autres administrations, à l'historique et aux pairs. Quatre lentilles — cohérence, changement, pairs, réseau — produisent des signaux justifiés, puis C apprend une priorité risque × enjeu. La décision appartient à l'inspecteur; aucune sanction n'est automatique."
+        "Les informations utiles au contrôle existent déjà mais restent en silos : déclarations fiscales, douane (SINDA), "
+        "paiements publics (ADEB), annexes de l'employeur. La sélection des contrôles repose sur des règles statiques qui "
+        "favorisent les grandes entreprises et les secteurs « classiques », pour une couverture de l'ordre de 2,5 % des "
+        "contribuables. <b>Basira</b> classe chaque mois tout le portefeuille par <b>risque × enjeu</b>, explique chaque score "
+        "par des faits chiffrés et les pièces sources, et laisse la décision à l'inspecteur : aucune sanction n'est automatique."
     )
-    heading("2. Données et disponibilité")
+
+    heading("2. Données utilisées")
     paragraph(
-        "Les données sont entièrement synthétiques. Le format reproduit le dossier fiscal et la déclaration mensuelle DGI, les annexes I, II et V de l'employeur, les déclarations et liquidations douanières SINDA, les paiements ADEB et les contrôles passés. Le portefeuille cible comprend 5 250 entreprises; B livre 24 mois × 16 signaux, soit 2 016 000 lignes. Les fichiers de vérité terrain sont réservés à l'évaluation de C et ne sont jamais lus par B."
+        f"Données <b>entièrement synthétiques</b> (aucune donnée réelle) : {nb_ent} entreprises sur 24 mois (2024-09 → 2026-08), "
+        "au format du dossier fiscal, de la déclaration mensuelle, des annexes I, II et V, des déclarations et liquidations "
+        "douanières, des paiements ADEB et des contrôles passés. Le générateur injecte 7 schémas de fraude (minoration du CA, "
+        "réseaux de fausses factures, sous-évaluation en douane, recettes publiques non déclarées, dormante réactivée, compression "
+        "de marge, sociétés coquilles) et des témoins trompeurs (croissance légitime, citoyens modèles, sosies sans fraude). "
+        "La vérité terrain n'est lue que par l'évaluation, jamais par l'entraînement ni pour fixer un seuil. Un calcul à fin M "
+        "ne lit que ce qui était disponible à cette date (déclaration de M connue en M+1, annexes de l'exercice N en mars N+1)."
     )
-    paragraph(
-        "Un calcul à fin M ne lit que les dépôts effectivement reçus. La comparaison fiscale utilise les périodes échues jusqu'à M-1; la TVA importée est décalée d'un mois selon le dictionnaire. L'exercice N des annexes employeur n'est disponible qu'en mars N+1. Les données annuelles restent des approximations pour une reconstitution glissante."
+
+    heading("3. Approche IA")
+    puce(
+        "<b>16 signaux explicables</b>, 4 lentilles : <i>cohérence</i> entre sources indépendantes (imports ou paiements reçus vs CA "
+        "déclaré, TVA import, prix de référence en douane), <i>changement</i> (EWMA sur l'historique propre), <i>pairs</i> (écart robuste "
+        "médiane/MAD, distance de Mahalanobis régularisée par secteur × taille), <i>réseau</i> (fournisseurs partagés, coquilles, "
+        "proximité d'entreprises redressées). Statistiques déterministes ; chaque signal actif porte un fait en français et "
+        "jusqu'à 50 pièces sources."
     )
-    heading("3. Technique et explicabilité")
-    paragraph(
-        "Le lot B utilise des agrégations déterministes, des fenêtres de 6/12 mois, un EWMA α=0,3 et une normalisation bornée. Les pairs sont définis par division NAT et taille, avec repli division puis section. La distance multivariée emploie une covariance régularisée robuste aux matrices singulières. Les métriques réseau mensuelles sont produites par A; B les normalise et relie les opérations disponibles."
+    nb_ex, nb_pos = modele.get("nb_exemples", "?"), modele.get("nb_positifs", "?")
+    puce(
+        f"<b>Score appris</b> : régression logistique L2 sur {nb_ex} contrôles passés ({nb_pos} redressements), caractéristiques au "
+        "mois précédant l'avis, poids ≥ 0 (un signal d'alerte ne baisse jamais le risque). Les signaux jamais observés en "
+        "contrôle ou à coefficient négatif — effet du biais de sélection de la règle statique — reçoivent un poids a priori "
+        "(médiane des poids appris). Échelle fixée par la capacité de contrôle (1 % des couples entreprise × mois ≥ 70) ; un "
+        "écart très marqué entre deux sources indépendantes suffit à rendre l'entreprise prioritaire ; plafond 99. Chaque point "
+        "est attribué à un signal (somme des points = score − score de base) : l'explication est exacte par construction."
     )
-    paragraph(
-        "Chaque signal actif fournit un fait en français et au plus 50 références brutes triées par montant. Les chiffres affichés citent une pièce vérifiable; les calculs utilisent toutes les opérations admissibles. Les quatre Parquet contractuels, un journal des calculs et les empreintes des entrées permettent de reproduire la livraison. L'enjeu est une estimation selon les coefficients du contrat, avec une fourchette élargie lorsque les sources ou l'historique manquent."
+    puce(
+        "<b>Priorité</b> = score × enjeu (droits éludés reconstitués à partir des écarts entre sources). Segments PRIORITAIRE, "
+        "SURVEILLANCE, NORMAL et CONFIANCE (voie de facilitation) ; action suggérée (demande d'information, vérification, "
+        "signalement à la douane)."
     )
-    heading("4. Modèles et bibliothèques")
-    paragraph(
-        "<b>B :</b> aucun modèle pré-entraîné et aucun modèle de prédiction appris. Bibliothèques directes : "
-        + escape(
-            ", ".join(
-                f"{name} {version(name)}" for name in ("numpy", "pandas", "pyarrow", "reportlab")
-            )
-        )
-        + ". Tests et qualité : pytest, Ruff. Un inventaire complet des dépendances Python est livré dans requirements.lock.txt."
+    puce(
+        "<b>Assistant</b> : Qwen 3.5 9B hébergé en local, 4 outils (dossier, preuves, réseau, lettre de demande d'information). "
+        "Tout chiffre de la réponse doit provenir des outils, sinon Basira renvoie une réponse déterministe ; l'assistant ne décide jamais."
     )
-    for model in stack.get("models", []):
-        paragraph(
-            escape(
-                f"{model['owner']} — {model['name']}; pré-entraîné : {'oui' if model['pretrained'] else 'non'}; {model['status']}."
-            )
-        )
-    for owner, libraries in stack.get("libraries", {}).items():
-        paragraph(escape(f"{owner} — bibliothèques : {', '.join(libraries)}."))
-    story.append(PageBreak())
-    heading("5. Résultats et validation")
+    k = boucle.get("decisions_ajoutees") if boucle else None
+    puce(
+        "<b>Prototype</b> : application web de l'inspecteur (liste priorisée, fiche « Pourquoi ce score ? » avec pièces sources, "
+        "graphe du réseau déployable de proche en proche, copilote, décision motivée et journalisée). Les décisions deviennent de "
+        "nouveaux exemples étiquetés : <b>boucle d'apprentissage</b>"
+        + (f" (simulation avant/après sur {k} décisions, sans réentraînement en direct)." if k else ".")
+    )
+
+    heading("4. Résultats (données synthétiques)")
     if evaluation:
         paragraph(
-            "Résultats fournis par C : "
-            + escape(str(evaluation.get("periode_test", "période non renseignée")))
-            + "; top N = "
-            + escape(str(evaluation.get("top_n", "?")))
-            + "."
+            f"Chaque mois de la période de test ({escape(str(evaluation.get('periode_test', '?')))}), chaque méthode choisit "
+            f"{evaluation.get('top_n', '?')} entreprises à contrôler. Moyennes mensuelles :"
         )
-        rows = [["Méthode", "Détection", "DT / contrôle", "Fausses alertes", "Avance (mois)"]]
-        for method in evaluation.get("methodes", []):
-            rows.append(
-                [
-                    Paragraph(escape(str(method["nom"])), styles["BodyFR"]),
-                    f"{100 * method['taux_detection_top_n']:.1f} %",
-                    f"{method['montant_moyen_par_controle']:,.0f}",
-                    str(method["fausses_alertes_croissance_legitime"]),
-                    str(
-                        method.get("avance_detection_mois")
-                        if method.get("avance_detection_mois") is not None
-                        else "n.d."
-                    ),
-                ]
-            )
-        table = Table(rows, colWidths=[5 * cm, 2.2 * cm, 3 * cm, 3 * cm, 2.6 * cm], repeatRows=1)
-        table.setStyle(
-            TableStyle(
-                [
-                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#dce7f3")),
-                    ("FONTSIZE", (0, 0), (-1, -1), 8),
-                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                    ("GRID", (0, 0), (-1, -1), 0.4, colors.lightgrey),
-                ]
-            )
-        )
+        rows = [["Méthode", "Fraudes dans la sélection", "Droits éludés / contrôle", "Croissances légitimes retenues"]]
+        for m in evaluation.get("methodes", []):
+            rows.append([m["nom"], _pct(m["taux_detection_top_n"]), _dt(m["montant_moyen_par_controle"]),
+                         str(m["fausses_alertes_croissance_legitime"]).replace(".", ",")])
+        table = Table(rows, colWidths=[5.2 * cm, 3.8 * cm, 3.8 * cm, 4.8 * cm], repeatRows=1)
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#dce7f3")),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTNAME", (0, 1), (-1, 1), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 8),
+            ("ALIGN", (1, 0), (-1, -1), "CENTER"),
+            ("GRID", (0, 0), (-1, -1), 0.4, colors.lightgrey),
+            ("TOPPADDING", (0, 0), (-1, -1), 2), ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+        ]))
         story.append(table)
-        story.append(Spacer(1, 8))
-        paragraph(escape(str(evaluation.get("note", "Évaluation sur données synthétiques."))))
+        story.append(Spacer(1, 4))
+        v = evaluation.get("validation_modele", {})
+        if v:
+            paragraph(
+                f"En 2026-08, {v['prioritaires_mois_courant']} entreprises sont PRIORITAIRE, dont "
+                f"<b>{_pct(v['precision_prioritaires_mois_courant'])} de fraudes actives</b>. Robustesse : un modèle entraîné "
+                f"uniquement sur les {v['nb_controles_avant_periode_test']} contrôles antérieurs à la période de test garde "
+                f"{_pct(v['detection_top_n_modele_sans_controles_periode_test'])} de fraudes dans sa sélection."
+            )
     else:
         paragraph(
-            "<b>Impact non encore mesuré :</b> data/scores/evaluation.json de C est absent. La comparaison avec une règle statique et le hasard, le taux de détection, la récupération moyenne, les faux positifs et l'avance de détection seront repris automatiquement de ce fichier. Aucun gain chiffré n'est revendiqué."
-        )
-    run_path = data_dir / "signaux" / "rapport_execution.json"
-    if run_path.exists():
-        run = json.loads(run_path.read_text(encoding="utf-8"))
-        paragraph(
-            escape(
-                f"Dernière exécution B : {run['entreprises']} entreprises, {run['mois']} mois, {run['lignes_signaux']} lignes de signaux; durée {run['duree_secondes']} s. Il s'agit d'une mesure d'exécution, pas d'une validation de performance prédictive."
-            )
-        )
-    paragraph(
-        "La suite de tests vérifie les schémas, les délais de publication, l'invariance aux observations futures, les preuves, la stabilité des covariances et les identités financières. Le contrôle des héros vérifie les signaux attendus, dont l'absence d'alerte de cohérence pour Zeta. Les scores 28 → 76 et les segments restent du ressort de C."
-    )
-    heading("6. Limites")
-    paragraph(
-        "Les données synthétiques ne démontrent pas l'efficacité en production. Les contrôles historiques sont rares et biaisés par leur sélection; les labels sont partiels. Le référentiel d'activités n'est pas unifié. SAR et SADEC 2 ne sont connus que par la conférence. La couverture annuelle 2023 peut être partielle; les comparaisons annuelles incomplètes sont neutralisées. Les estimations clients + ADEB peuvent se recouvrir faute de clés de rapprochement. La TVA et l'IS du calcul sont des hypothèses de prototype, à valider métier."
-    )
-    paragraph(
-        "Les caractéristiques statiques du registre sont supposées historiques et stables; les corrections des annexes sans date de publication ne peuvent pas être reconstituées dans le passé. A doit garantir que les métriques réseau sont calculées à date. Un groupe de section trop petit reste signalé comme peu documenté. La confiance mesure la couverture et l'accord des sources, pas une probabilité de fraude."
-    )
-    heading("7. Recommandations pour la production")
-    paragraph(
-        "Brancher les sources au data lake SADEC 2 et à SINDA 2, conserver les versions et dates de disponibilité, unifier les identifiants et référentiels, et valider les règles avec les métiers. Héberger les données et l'assistant dans le périmètre de l'administration. Prévoir habilitations, journalisation, minimisation et examen du cadre loi 2004-63 / INPDP. Réentraîner et évaluer le modèle de C à partir des décisions et résultats réels, avec contrôle des biais par secteur, taille et région; maintenir une validation humaine."
-    )
-    heading("Références documentaires transmises")
-    for title, url in (
-        (
-            "Ministère des Finances — déclaration mensuelle 2023",
-            "https://www.finances.gov.tn/sites/default/files/2023-04/MENSUELLE__2023.pdf",
-        ),
-        (
-            "Ministère des Finances — cahier des charges employeur",
-            "https://www.finances.gov.tn/sites/default/files/2023-04/EMPCCA_22-23.pdf",
-        ),
-        ("Douane tunisienne — valeur en douane", "https://www.douane.gov.tn/valeur-en-douane/"),
-        (
-            "CIMF — présentation ADEB",
-            "http://www.cimf.tn/index.php/systeme-d-aide-a-la-decision-budgetaire",
-        ),
-    ):
-        paragraph(
-            f'<link href="{escape(url)}" color="#174a7e">{escape(title)}</link> (référence issue de modele_donnees.md).'
+            "<b>Impact non encore mesuré :</b> data/scores/evaluation.json de C est absent. La comparaison avec une règle statique "
+            "et le hasard sera reprise automatiquement de ce fichier. Aucun gain chiffré n'est revendiqué."
         )
 
+    heading("5. Limites identifiées")
+    puce("Les données et les signaux sont conçus à partir de la même spécification : ces résultats montrent la faisabilité et "
+         "l'intérêt du croisement des sources, pas l'efficacité en production.")
+    if evaluation and evaluation.get("validation_modele"):
+        v = evaluation["validation_modele"]
+        det = evaluation.get("details", {}).get("Basira", {})
+        basira = next((m for m in evaluation.get("methodes", []) if m["nom"] == "Basira"), {})
+        sc = v.get("part_prioritaire_par_scenario", {})
+        puce(f"Avec {v['nb_controles']} contrôles passés, rares, bruités et biaisés par leur sélection, les poids appris ne font pas "
+             f"mieux que des poids égaux (AUC en validation croisée {str(v['auc_validation_croisee_poids_appris']).replace('.', ',')} "
+             f"contre {str(v['auc_validation_croisee_poids_egaux']).replace('.', ',')} ; sélection {_pct(basira.get('taux_detection_top_n', 0))} "
+             f"contre {_pct(v['detection_top_n_poids_egaux'])}). La performance vient du croisement des sources ; l'apprentissage "
+             "prendra son sens avec les décisions des inspecteurs.")
+        puce(f"Pas d'avance de détection mesurée sur la règle statique ({str(basira.get('avance_detection_mois')).replace('.', ',')} mois) ; "
+             f"une fraude entre dans la sélection {str(det.get('delai_moyen_detection_mois', '?')).replace('.', ',')} mois après son début "
+             f"en moyenne, et {det.get('entreprises_frauduleuses_detectees', '?')} fraudes sur {det.get('sur', '?')} y entrent au moins une fois.")
+        if {"E", "F", "CROISSANCE_LEGITIME"} <= set(sc):
+            puce(f"Schémas mal couverts : dormante réactivée ({_pct(sc['E']['part'])} PRIORITAIRE), compression de marge "
+                 f"({_pct(sc['F']['part'])}) ; {_pct(sc['CROISSANCE_LEGITIME']['part'])} des croissances légitimes sont PRIORITAIRE.")
+    puce("L'enjeu est une estimation (données annuelles, double compte possible clients/ADEB, taux de prototype à valider). "
+         "Le référentiel d'activités n'est pas unifié entre administrations ; SAR et SADEC 2 ne sont connus que par la conférence.")
+
+    heading("6. Modèles, bibliothèques et API tierces")
+    for model in stack.get("models", []):
+        puce(escape(f"{model['owner']} — {model['name']} ; pré-entraîné : {'oui' if model['pretrained'] else 'non'} ; {model['status']}."))
+    paragraph(escape(" · ".join(f"{owner} : {', '.join(libs)}" for owner, libs in stack.get("libraries", {}).items()))
+              + ". Aucune API externe ni service en ligne : tout fonctionne hors connexion.")
+
+    heading("7. Recommandations pour une mise en production")
+    paragraph(
+        "Brancher les sources au data lake SADEC 2 et à SINDA en conservant les dates de disponibilité ; unifier identifiants et "
+        "référentiel d'activités ; valider les signaux et l'enjeu avec les métiers. Héberger données et assistant dans le périmètre "
+        "de l'administration, avec habilitations, journalisation, minimisation et examen loi 2004-63 / INPDP. Réentraîner sur les "
+        "résultats réels et les décisions des inspecteurs, suivre les biais par secteur, taille et région, et garder la décision humaine."
+    )
+
     def footer(canvas, doc):
-        canvas.setFont("Helvetica", 8)
-        canvas.drawRightString(19 * cm, 1 * cm, f"Basira · Lot B · {doc.page}")
+        canvas.setFont("Helvetica", 7.5)
+        canvas.drawRightString(19.4 * cm, 0.8 * cm, f"Basira · Note de synthèse · {doc.page}")
 
     doc = SimpleDocTemplate(
         str(output),
         pagesize=(21 * cm, 29.7 * cm),
         leftMargin=1.6 * cm,
         rightMargin=1.6 * cm,
-        topMargin=1.3 * cm,
-        bottomMargin=1.5 * cm,
+        topMargin=1.2 * cm,
+        bottomMargin=1.3 * cm,
         title="Basira — Note de synthèse",
-        author="Équipe Basira — lot B",
+        author="Équipe Basira",
     )
     doc.build(story, onFirstPage=footer, onLaterPages=footer)
     return output

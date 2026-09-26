@@ -4,8 +4,10 @@ Cible : 1 si REDRESSEMENT_MINEUR ou FRAUDE_SIGNIFICATIVE (poids d'échantillon 2
 Caractéristiques : valeur_norm des signaux au mois précédant date_avis (pas de fuite du futur).
 Contrainte : poids ≥ 0 (un signal d'alerte ne fait jamais baisser le risque) → on retire les signaux
 à coefficient négatif et on réentraîne, jusqu'à ce que tous les poids restants soient ≥ 0.
-Signal jamais observé dans les contrôles passés : poids a priori = médiane des poids positifs appris (les contrôles
-passés, choisis par une règle type SAR, n'ont jamais regardé ces schémas : absence de preuve ≠ absence de risque).
+Signal sans poids appris (jamais observé, ou coefficient négatif) : poids a priori = médiane des poids positifs appris.
+Les contrôles passés, choisis par une règle type SAR, n'ont jamais regardé certains schémas et ont sur-sélectionné
+d'autres signaux (souvent sans redressement) : un coefficient négatif y traduit ce biais de sélection, pas une baisse
+du risque. Absence de preuve ≠ absence de risque.
 Calibrage : échelle fixée par capacité (voir `calibrer`), poids relatifs inchangés.
 `verite_terrain` n'est jamais lu ici.
 """
@@ -67,11 +69,10 @@ def ajuster(jeu: pd.DataFrame, X: pd.DataFrame, C: float = 1.0) -> dict:
     appris = np.array([coefs.get(f, 0.0) for f in config.FEATURES])
     positifs = appris[appris > 0]
     a_priori = float(np.median(positifs)) if len(positifs) else 1.0
-    jamais = {e["code_signal"] for e in exclus if e["raison"].startswith("jamais")}
+    sans_poids = {e["code_signal"] for e in exclus}
     for e in exclus:
-        if e["code_signal"] in jamais:
-            e["raison"] += f" : poids a priori {a_priori:.3f} (médiane des poids appris)"
-    appris = np.array([a_priori if f in jamais else v for f, v in zip(config.FEATURES, appris)])
+        e["raison"] += f" ; poids a priori {a_priori:.3f} (médiane des poids appris)"
+    appris = np.array([a_priori if f in sans_poids else v for f, v in zip(config.FEATURES, appris)])
     calib = calibrer(X, appris)
     poids = {f: round(float(v * calib["facteur_echelle"]), 6) for f, v in zip(config.FEATURES, appris)}
     return {
@@ -82,7 +83,8 @@ def ajuster(jeu: pd.DataFrame, X: pd.DataFrame, C: float = 1.0) -> dict:
         "nb_positifs": int(jeu["y"].sum()),
         "definition_cible": "REDRESSEMENT_MINEUR ou FRAUDE_SIGNIFICATIVE (poids 2)",
         "methode": "Régression logistique L2 (scikit-learn), class_weight équilibré, poids contraints ≥ 0 (retrait itératif), "
-                   "poids a priori pour les signaux jamais observés en contrôle, puis calibrage de l'échelle par la capacité "
+                   "poids a priori (médiane des poids appris) pour les signaux jamais observés ou à coefficient négatif "
+                   "(biais de sélection des contrôles passés), puis calibrage de l'échelle par la capacité "
                    "(1 % des couples entreprise × mois ≥ 70) ; plancher 70 si une preuve de cohérence est forte (score.py)",
         "signaux_exclus": exclus,
         "calibrage": {**calib, "intercept_appris": round(float(m.intercept_[0]), 6),
