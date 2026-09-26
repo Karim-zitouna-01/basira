@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/logo.png" alt="Logo Basira" width="120" /></p>
+
 # Basira — le risque de conformité des entreprises, expliqué
 
 > **Hackathon national « IA & Finances publiques »** (Esprit School of Business, 25–26 septembre 2026)

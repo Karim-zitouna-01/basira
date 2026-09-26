@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Link, NavLink as LienRouteur, useLocation, useNavigate } from "react-router-dom";
 import { ActionIcon, Avatar, Badge, Combobox, Group, Menu, NavLink, ScrollArea, Stack, Text, TextInput, Tooltip, UnstyledButton, useCombobox } from "@mantine/core";
-import { Building2, ChevronsLeft, ChevronsRight, Clock, Landmark, Palette, Search, Star } from "lucide-react";
+import { Building2, ChevronsLeft, ChevronsRight, Clock, Palette, Search, Star } from "lucide-react";
 import { listerEntreprises, trouverEntreprise } from "../lib/donnees.js";
 import { useSuivis } from "../lib/suivis.js";
 import { PALETTES } from "../lib/palettes.js";
@@ -99,13 +99,13 @@ export default function BarreLaterale({ rail, onRail, palette, onPalette }) {
   return (
     <nav className="flex h-full flex-col" aria-label="Navigation principale">
       <div className={`flex items-center gap-2.5 border-b border-bordure ${rail ? "justify-center px-2 py-3.5" : "px-4 py-3.5"}`}>
-        <Link to="/" className="grid size-9 shrink-0 place-items-center rounded-lg bg-encre text-carte" aria-label="Accueil">
-          <Landmark size={18} aria-hidden="true" />
+        <Link to="/" className="grid size-10 shrink-0 place-items-center" aria-label="Basira — accueil">
+          <img src="/basira.png" alt="" width={40} height={40} className="size-10" />
         </Link>
         {!rail && (
           <div className="min-w-0">
-            <Text size="sm" fw={700} lh={1.2}>Poste de l'inspecteur</Text>
-            <Text size="xs" c="dimmed" lh={1.3} truncate>DGI · Douanes · synthétique</Text>
+            <Text size="lg" fw={800} lh={1.1} className="tracking-tight">Basira</Text>
+            <Text size="xs" c="dimmed" lh={1.3} truncate>Risque de conformité</Text>
           </div>
         )}
       </div>
