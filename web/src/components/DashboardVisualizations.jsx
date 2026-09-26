@@ -386,7 +386,7 @@ export default function DashboardVisualizations({ entreprise, palette, periode, 
       </div>
 
       <Carte titre="Réseau de contreparties" icone={Waypoints}
-        aide="Montants de la sélection. Cliquez une contrepartie pour filtrer les opérations ; ↗ ouvre la fiche d'une entreprise du portefeuille.">
+        aide="Qui paie qui sur la période. Cliquez une contrepartie pour comprendre la relation et le motif d'un signalement.">
         <GrapheReseau entreprise={entreprise} montants={montants} contrepartiesFiltrees={filtres.contreparties} onClicContrepartie={basculerContrepartie} palette={palette} />
       </Carte>
 

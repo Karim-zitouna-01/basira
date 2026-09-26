@@ -1,250 +1,256 @@
-// Réseau de contreparties en flux d'argent : qui paie l'entreprise (à gauche) → l'entreprise → qui elle paie (à droite).
-// Chaque flèche suit le paiement et porte le nom de la relation ; au-delà de quelques contreparties par côté, le reste
-// est regroupé (« + N autres ») pour rester lisible. Les autres entreprises du portefeuille liées aux mêmes contreparties
-// sont listées sous le graphe plutôt que dessinées.
-import { useEffect, useMemo, useRef, useState } from "react";
+// Réseau de contreparties en flux d'argent (React Flow) : qui paie l'entreprise (à gauche) → l'entreprise → qui elle
+// paie (à droite). Chaque flèche suit le paiement et porte la relation et le montant ; une phrase résume le réseau ;
+// un clic sur une contrepartie ouvre son explication (relation, motif du signalement, entreprises liées).
+import { memo, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, ArrowUpRight } from "lucide-react";
+import { Background, Controls, Handle, MarkerType, Panel, Position, ReactFlow, ReactFlowProvider, useReactFlow } from "@xyflow/react";
+import { Alert, Anchor, Badge, Button, CloseButton, Group, Paper, SegmentedControl, Stack, Text, ThemeIcon, Tooltip } from "@mantine/core";
+import { AlertTriangle, ArrowRight, ArrowUpRight, Filter, History } from "lucide-react";
 import { entreprisesLiees } from "../lib/donnees.js";
 import { SEGMENTS } from "../lib/palettes.js";
-import { fmtCompact, fmtDate, fmtDT } from "../lib/format.js";
+import { COULEURS_SEGMENT } from "../lib/theme.js";
+import { fmtCompact, fmtDate, fmtDT, fmtMoisIso } from "../lib/format.js";
 
-const PAR_COTE = 6;          // contreparties visibles par côté avant regroupement
-const H_CARTE = 42;
-const PAS = 54;              // pas vertical entre deux cartes
+const PAR_COTE = 6;           // contreparties visibles par côté avant regroupement
+const L_CARTE = 230, H_CARTE = 58, PAS = 74, X_CENTRE = 400, L_CENTRE = 190, X_DROITE = 800;
 const ENTRANTS = new Set(["Client", "Client (honoraires)", "Acheteur public"]);
 const EST_MF = /^\d{7}[A-Z]{3}\d{3}$/;
-const couleurSegment = (s) => `var(--seg-${SEGMENTS[s]?.jeton ?? "norm"})`;
-// Libellé court posé sur la flèche (le détail est dans l'infobulle de la carte)
+const ROUGE = "#dc2626", GRIS = "#94a3b8";
 const COURT = {
-  "Achat · annexe V": "Achat", "Vente · annexe V": "Vente", "Paiement public": "Paiement", "Honoraires reçus": "Honoraires",
-  "Autres flux": "Autres", "Fournisseur étranger": "Import", "Fournisseur local": "Achat", Client: "Vente", "Acheteur public": "Paiement"
+  "Achat · annexe V": "Achat", "Vente · annexe V": "Vente", "Paiement public": "Paiement public", "Honoraires reçus": "Honoraires",
+  "Fournisseur étranger": "Import", "Fournisseur local": "Achat", Client: "Vente", "Acheteur public": "Paiement public"
 };
-const LIEES_MAX = 3;   // contreparties listées sous le graphe
-const CHIPS_MAX = 2;   // entreprises affichées par contrepartie (le reste en « +N »)
-
-// Texte tronqué à la largeur disponible (approximation : 6,1 px par caractère à 12 px)
-const couper = (t, largeur, px = 6.1) => {
-  const n = Math.max(4, Math.floor(largeur / px));
-  return t.length > n ? `${t.slice(0, n - 1)}…` : t;
+const SOURCE_RELATION = {
+  Import: "déclarations en douane (SINDA)", "Achat · annexe V": "annexe V de la déclaration employeur 2025",
+  "Vente · annexe V": "annexe V des clients (exercice 2025)", Honoraires: "annexe II (honoraires, loyers)",
+  "Honoraires reçus": "annexe II des clients", "Paiement public": "ordonnances de paiement ADEB"
 };
 
-// Nom de l'entreprise centrale sur deux lignes au plus (coupure aux espaces)
-function deuxLignes(t, n) {
-  if (t.length <= n) return [t];
-  const mots = t.split(" ");
-  let l1 = "";
-  while (mots.length && (l1 + " " + mots[0]).trim().length <= n) l1 = `${l1} ${mots.shift()}`.trim();
-  const reste = mots.join(" ");
-  return [l1 || t.slice(0, n), reste.length > n ? `${reste.slice(0, n - 1)}…` : reste].filter(Boolean);
-}
+// ---------------------------------------------------------------- nœuds
+const CarteContrepartie = memo(function CarteContrepartie({ data }) {
+  const n = data.n;
+  const signalee = n.risk_flag;
+  const badge = n.agregat ? null : n.coquille ? ["Coquille", ROUGE] : signalee ? ["Signalée", ROUGE] : n.nouvelle ? ["Nouvelle", "#b45309"] : null;
+  return (
+    <div className={`rounded-lg border bg-white px-3 py-2 shadow-sm transition-shadow ${data.selectionnee ? "ring-2 ring-[var(--mantine-color-basira-5)]" : ""} ${n.agregat ? "border-dashed" : ""}`}
+      style={{ width: L_CARTE, height: H_CARTE, borderColor: signalee ? ROUGE : "var(--bordure)", opacity: n.horsSelection && !n.agregat ? 0.55 : 1, cursor: "pointer" }}>
+      {n.sens === "entrant" ? <Handle type="source" position={Position.Right} className="!opacity-0" /> : <Handle type="target" position={Position.Left} className="!opacity-0" />}
+      <div className="flex items-center gap-1.5">
+        {signalee && <AlertTriangle size={13} color={ROUGE} className="shrink-0" />}
+        <span className="min-w-0 flex-1 truncate text-[12.5px] font-semibold text-encre" title={n.label}>{n.label}</span>
+        {badge && <Badge size="xs" variant="light" color={badge[1]} className="shrink-0">{badge[0]}</Badge>}
+      </div>
+      <div className="mt-1 flex items-center gap-1.5 text-[11.5px] text-attenue">
+        <span className="chiffres font-semibold text-encre-2">{n.montant ? fmtCompact(n.montant) : "—"}</span>
+        {!n.agregat && <span className="truncate">· {n.type}</span>}
+        {n.agregat && <span>· cliquer pour afficher</span>}
+      </div>
+    </div>
+  );
+});
 
-// Point et tangente d'une courbe de Bézier cubique (pour poser les libellés sur les flèches)
-const bezier = (p0, p1, p2, p3, t) => {
-  const u = 1 - t;
-  return [0, 1].map((k) => u ** 3 * p0[k] + 3 * u * u * t * p1[k] + 3 * u * t * t * p2[k] + t ** 3 * p3[k]);
-};
+const CarteEntreprise = memo(function CarteEntreprise({ data }) {
+  const { e, nG, nD } = data;
+  const couleur = COULEURS_SEGMENT[e.segment];
+  const poignees = (n, type, pos, prefixe) => Array.from({ length: Math.max(1, n) }, (_, i) => (
+    <Handle key={`${prefixe}${i}`} id={`${prefixe}${i}`} type={type} position={pos} className="!opacity-0"
+      style={{ top: `${((i + 1) / (Math.max(1, n) + 1)) * 100}%` }} />
+  ));
+  return (
+    <div className="flex flex-col items-center justify-center rounded-xl border-2 bg-white px-3 text-center shadow-md" style={{ width: L_CENTRE, height: data.hauteur, borderColor: couleur }}>
+      {poignees(nG, "target", Position.Left, "g")}
+      {poignees(nD, "source", Position.Right, "d")}
+      <span className="line-clamp-2 text-[13.5px] font-bold leading-tight text-encre">{e.company_name}</span>
+      <span className="mt-1 text-[11.5px] text-attenue">score {e.current_risk_score}/100</span>
+      <Badge mt={6} size="sm" variant="light" color={couleur}>{SEGMENTS[e.segment]?.libelle}</Badge>
+    </div>
+  );
+});
 
+const TYPES_NOEUDS = { contrepartie: CarteContrepartie, entreprise: CarteEntreprise };
+
+// ---------------------------------------------------------------- données
 function preparer(entreprise, montants) {
   const noeuds = entreprise.network_nodes.map((n) => {
     const selection = montants.get(n.id) ?? 0;
-    return {
-      ...n,
-      sens: n.sens ?? (ENTRANTS.has(n.type) ? "entrant" : "sortant"),
-      relation: n.relation ?? n.type,
-      montant: selection || n.montant_dt || 0,
-      horsSelection: !selection
-    };
+    return { ...n, sens: n.sens ?? (ENTRANTS.has(n.type) ? "entrant" : "sortant"), relation: n.relation ?? n.type,
+             montant: selection || n.montant_dt || 0, horsSelection: !selection };
   });
   const tri = (a, b) => (b.risk_flag - a.risk_flag) || (a.horsSelection - b.horsSelection) || (b.montant - a.montant);
-  return {
-    gauche: noeuds.filter((n) => n.sens === "entrant").sort(tri),
-    droite: noeuds.filter((n) => n.sens === "sortant").sort(tri)
-  };
+  return { gauche: noeuds.filter((n) => n.sens === "entrant").sort(tri), droite: noeuds.filter((n) => n.sens === "sortant").sort(tri) };
 }
 
-function Carte({ n, x, y, l, selectionnee, onClic, onOuvrir }) {
-  const accent = n.risk_flag ? "var(--seg-prio)" : n.segment ? couleurSegment(n.segment) : "var(--bordure)";
-  const titre = `${n.label} · ${n.type}\n${n.relation}${n.montant ? ` · ${fmtDT(n.montant)}` : ""}${n.depuis ? `\nDepuis le ${fmtDate(n.depuis)}` : ""}${n.risk_flag ? "\n⚠ contrepartie signalée" : ""}`;
-  const ouvrable = EST_MF.test(n.id);
-  const lTexte = l - (ouvrable ? 34 : 20);
+function regrouper(liste, cote, tout) {
+  if (tout || liste.length <= PAR_COTE + 1) return liste;
+  const reste = liste.slice(PAR_COTE);
+  return [...liste.slice(0, PAR_COTE), {
+    id: `__autres_${cote}`, agregat: true, label: `+ ${reste.length} autres contreparties`, type: "", relation: "Autres",
+    montant: reste.reduce((s, n) => s + n.montant, 0), sens: cote === "gauche" ? "entrant" : "sortant", risk_flag: false
+  }];
+}
+
+// ---------------------------------------------------------------- panneau d'explication
+function Explication({ n, entreprise, onFermer, onFiltrer }) {
+  const navigate = useNavigate();
+  const nom = entreprise.company_name;
+  const phrase = n.sens === "sortant"
+    ? <><b>{nom}</b> a payé <b>{fmtDT(n.montant)}</b> à <b>{n.label}</b></>
+    : <><b>{n.label}</b> a payé <b>{fmtDT(n.montant)}</b> à <b>{nom}</b></>;
+  const liees = (entreprise.liens_portefeuille ? entreprise.liens_portefeuille[n.id] ?? [] : entreprisesLiees(n.id, entreprise.mf)).filter((o) => o.mf !== n.id);
   return (
-    <g transform={`translate(${x},${y - H_CARTE / 2})`} opacity={n.horsSelection && !n.agregat ? 0.55 : 1}
-      className="cursor-pointer" onClick={onClic} role="button" tabIndex={0}
-      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onClic()}>
-      <title>{titre}</title>
-      <rect width={l} height={H_CARTE} rx={8} fill="var(--carte)"
-        stroke={selectionnee ? "var(--encre)" : n.risk_flag ? "var(--seg-prio)" : "var(--bordure)"} strokeWidth={selectionnee ? 2 : 1} />
-      <rect x={0} y={0} width={4} height={H_CARTE} rx={2} fill={accent} />
-      <text x={12} y={17} fontSize={12} fontWeight={600} fill="var(--encre)">
-        {n.risk_flag && <tspan fill="var(--seg-prio-texte)">⚠ </tspan>}
-        {couper(n.label, lTexte - (n.risk_flag ? 14 : 0))}
-      </text>
-      <text x={12} y={32} fontSize={10.5} fill="var(--attenue)">
-        {n.montant ? fmtCompact(n.montant) : "—"}
-        {n.nouvelle && !n.agregat && <tspan fill="var(--seg-surv-texte)" fontWeight={600}> · nouvelle relation</tspan>}
-      </text>
-      {ouvrable && (
-        <g transform={`translate(${l - 22},${H_CARTE / 2 - 8})`} onClick={(e) => { e.stopPropagation(); onOuvrir(n.id); }}>
-          <title>Ouvrir la fiche de {n.label}</title>
-          <rect width={16} height={16} rx={4} fill="var(--fond-2)" />
-          <path d="M5.5 10.5 L10.5 5.5 M6.5 5.5 H10.5 V9.5" stroke="var(--encre-2)" strokeWidth={1.4} fill="none" strokeLinecap="round" />
-        </g>
-      )}
-    </g>
+    <Paper withBorder shadow="md" p="md" radius="lg" w={320} className="!bg-white">
+      <Group justify="space-between" align="flex-start" wrap="nowrap" mb={6}>
+        <div className="min-w-0">
+          <Text fw={700} size="sm" lh={1.3}>{n.label}</Text>
+          <Text size="xs" c="dimmed">{n.type} · {n.relation}</Text>
+        </div>
+        <CloseButton size="sm" onClick={onFermer} aria-label="Fermer l'explication" />
+      </Group>
+      <Stack gap={8}>
+        <Text size="sm" lh={1.45}>{phrase}{n.horsSelection ? " (cumul de la relation)" : " sur la période affichée"}.</Text>
+        <Text size="xs" c="dimmed">Source : {SOURCE_RELATION[n.relation] ?? "graphe des relations"}{n.depuis ? ` · relation depuis le ${fmtDate(n.depuis)}` : ""}{n.nouvelle ? " (nouvelle)" : ""}</Text>
+        {n.motif && (
+          <Alert color="red" variant="light" p="xs" icon={<AlertTriangle size={15} />} title="Pourquoi elle est signalée">
+            <Text size="xs">{n.motif}</Text>
+          </Alert>
+        )}
+        {liees.length > 0 && (
+          <div>
+            <Text size="xs" fw={600} c="dimmed" mb={4}>Aussi en relation avec {n.nb_liees ?? liees.length} entreprise{(n.nb_liees ?? liees.length) > 1 ? "s" : ""} du portefeuille :</Text>
+            <Group gap={4}>
+              {liees.map((o) => (
+                <Badge key={o.mf} variant="outline" color={COULEURS_SEGMENT[o.segment]} size="sm" className="cursor-pointer" maw={280}
+                  onClick={() => navigate(`/entreprise/${o.mf}`)} rightSection={<ArrowUpRight size={10} />}>{o.company_name}</Badge>
+              ))}
+            </Group>
+          </div>
+        )}
+        <Group gap={6} mt={4}>
+          <Button size="xs" variant="light" leftSection={<Filter size={13} />} onClick={() => onFiltrer(n.label)}>Filtrer les opérations</Button>
+          {EST_MF.test(n.id) && <Button size="xs" variant="default" rightSection={<ArrowUpRight size={13} />} onClick={() => navigate(`/entreprise/${n.id}`)}>Ouvrir la fiche</Button>}
+        </Group>
+      </Stack>
+    </Paper>
   );
 }
 
-export default function GrapheReseau({ entreprise, montants, contrepartiesFiltrees, onClicContrepartie }) {
-  const navigate = useNavigate();
-  const conteneur = useRef(null);
-  const [L, setL] = useState(720);
+// ---------------------------------------------------------------- graphe
+function Graphe({ entreprise, montants, contrepartiesFiltrees, onClicContrepartie }) {
   const [tout, setTout] = useState({ gauche: false, droite: false });
-  useEffect(() => {
-    const el = conteneur.current;
-    const obs = new ResizeObserver(() => { const l = Math.round(el.clientWidth); if (l && Math.abs(l - L) > 10) setL(l); });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [L]);
-  useEffect(() => setTout({ gauche: false, droite: false }), [entreprise.mf]);
+  const [vue, setVue] = useState("toutes");
+  const [choisi, setChoisi] = useState(null);
+  const { fitView } = useReactFlow();
+  useEffect(() => { setTout({ gauche: false, droite: false }); setChoisi(null); setVue("toutes"); }, [entreprise.mf]);
 
   const { gauche, droite } = useMemo(() => preparer(entreprise, montants), [entreprise, montants]);
+  const filtre = (l) => (vue === "signalees" ? l.filter((n) => n.risk_flag) : l);
+  const G = regrouper(filtre(gauche), "gauche", tout.gauche);
+  const D = regrouper(filtre(droite), "droite", tout.droite);
 
-  // Au-delà de PAR_COTE, les plus petites contreparties sont regroupées en une carte cliquable
-  const colonne = (liste, cote) => {
-    if (tout[cote] || liste.length <= PAR_COTE + 1) return liste;
-    const reste = liste.slice(PAR_COTE);
-    return [...liste.slice(0, PAR_COTE), {
-      id: `__autres_${cote}`, agregat: true, label: `+ ${reste.length} autres contreparties`, type: "", relation: "Autres flux",
-      montant: reste.reduce((s, n) => s + n.montant, 0), sens: cote === "gauche" ? "entrant" : "sortant"
-    }];
-  };
-  const G = colonne(gauche, "gauche");
-  const D = colonne(droite, "droite");
-
-  // cartes assez étroites pour laisser aux libellés des flèches un couloir entre les colonnes
-  const cw = Math.round(Math.min(210, Math.max(140, L * 0.25)));
-  const lc = 150;
   const lignes = Math.max(G.length, D.length, 1);
-  const H = Math.max(160, lignes * PAS + 24);
-  const yc = H / 2;
-  const xc = L / 2 - lc / 2;
-  const yDe = (i, n) => yc + (i - (n - 1) / 2) * PAS;
+  const hauteur = lignes * PAS;
+  const hCentre = Math.max(110, Math.min(hauteur - 20, 40 + Math.max(G.length, D.length) * 14));
+  const y = (i, n) => hauteur / 2 + (i - (n - 1) / 2) * PAS - H_CARTE / 2;
   const max = Math.max(1, ...[...G, ...D].map((n) => n.montant));
-  const epaisseur = (m) => 1.2 + 3.3 * Math.sqrt(m / max);
-  const segCentre = entreprise.segment;
-  const nomCentre = deuxLignes(entreprise.company_name, Math.floor((lc - 16) / 6.9));
-  const hc = 52 + nomCentre.length * 16;
 
-  const clic = (n) => (n.agregat ? setTout((t) => ({ ...t, [n.sens === "entrant" ? "gauche" : "droite"]: true })) : onClicContrepartie(n.label));
+  const { nodes, edges } = useMemo(() => {
+    const nodes = [{ id: "__centre", type: "entreprise", position: { x: X_CENTRE, y: hauteur / 2 - hCentre / 2 }, draggable: false,
+                     data: { e: entreprise, nG: G.length, nD: D.length, hauteur: hCentre } }];
+    const edges = [];
+    const ajouter = (liste, cote) => liste.forEach((n, i) => {
+      nodes.push({ id: n.id, type: "contrepartie", position: { x: cote === "gauche" ? 0 : X_DROITE, y: y(i, liste.length) }, draggable: false,
+                   data: { n, selectionnee: choisi === n.id || contrepartiesFiltrees.includes(n.label) } });
+      const couleur = n.risk_flag ? ROUGE : GRIS;
+      const libelle = `${COURT[n.relation] ?? n.relation}${n.montant ? ` · ${fmtCompact(n.montant)}` : ""}`;
+      edges.push({
+        id: `e-${n.id}`, source: cote === "gauche" ? n.id : "__centre", target: cote === "gauche" ? "__centre" : n.id,
+        sourceHandle: cote === "gauche" ? undefined : `d${i}`, targetHandle: cote === "gauche" ? `g${i}` : undefined,
+        label: libelle, markerEnd: { type: MarkerType.ArrowClosed, color: couleur, width: 16, height: 16 },
+        style: { stroke: couleur, strokeWidth: 1.4 + 3.6 * Math.sqrt(n.montant / max), strokeDasharray: n.nouvelle ? "6 4" : undefined, opacity: n.horsSelection && !n.agregat ? 0.45 : 0.9 },
+        labelStyle: { fontSize: 11, fontWeight: 600, fill: n.risk_flag ? ROUGE : "#334155" },
+        labelBgStyle: { fill: "#fff", stroke: n.risk_flag ? "#fecaca" : "#e2e8f0" }, labelBgPadding: [6, 3], labelBgBorderRadius: 6
+      });
+    });
+    ajouter(G, "gauche");
+    ajouter(D, "droite");
+    return { nodes, edges };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entreprise, G.length, D.length, montants, choisi, contrepartiesFiltrees, vue, tout]);
 
-  const fleche = (n, i, liste, cote) => {
-    const y = yDe(i, liste.length);
-    // les flèches arrivent réparties le long du bord de l'entreprise, pas en un seul point
-    const yEnt = yc + (i - (liste.length - 1) / 2) * Math.min(7, 44 / Math.max(1, liste.length - 1));
-    // gauche : contrepartie → entreprise ; droite : entreprise → contrepartie (sens du paiement)
-    const [p0, p3] = cote === "gauche" ? [[cw, y], [xc - 3, yEnt]] : [[xc + lc, yEnt], [L - cw - 3, y]];
-    const dx = (p3[0] - p0[0]) * 0.45;
-    const p1 = [p0[0] + dx, p0[1]], p2 = [p3[0] - dx, p3[1]];
-    const [lx, ly] = bezier(p0, p1, p2, p3, cote === "gauche" ? 0.28 : 0.72);
-    const couleur = n.risk_flag ? "var(--seg-prio)" : "var(--attenue)";
-    const libelle = COURT[n.relation] ?? couper(n.relation, 70, 5.6);
-    const lg = libelle.length * 5.6 + 12;
-    return (
-      <g key={`f-${n.id}`} opacity={n.horsSelection && !n.agregat ? 0.45 : 1}>
-        <path d={`M${p0[0]},${p0[1]} C${p1[0]},${p1[1]} ${p2[0]},${p2[1]} ${p3[0]},${p3[1]}`} fill="none" stroke={couleur}
-          strokeOpacity={n.risk_flag ? 0.85 : 0.5} strokeWidth={epaisseur(n.montant)} strokeDasharray={n.nouvelle ? "5 4" : undefined}
-          markerEnd={`url(#pointe-${n.risk_flag ? "prio" : "neutre"})`} />
-        <g transform={`translate(${lx - lg / 2},${ly - 9})`} pointerEvents="none">
-          <rect width={lg} height={18} rx={9} fill="var(--carte)" stroke={n.risk_flag ? "var(--seg-prio)" : "var(--bordure)"} />
-          <text x={lg / 2} y={12.5} textAnchor="middle" fontSize={10} fontWeight={600}
-            fill={n.risk_flag ? "var(--seg-prio-texte)" : "var(--encre-2)"}>{libelle}</text>
-        </g>
-      </g>
-    );
+  useEffect(() => { const t = setTimeout(() => fitView({ padding: 0.08, duration: 200 }), 30); return () => clearTimeout(t); }, [nodes.length, fitView]);
+
+  const tousNoeuds = [...gauche, ...droite];
+  const noeudChoisi = tousNoeuds.find((n) => n.id === choisi);
+  const clic = (_, nd) => {
+    if (nd.id === "__centre") return;
+    const n = nd.data.n;
+    if (n.agregat) setTout((t) => ({ ...t, [n.sens === "entrant" ? "gauche" : "droite"]: true }));
+    else setChoisi((c) => (c === n.id ? null : n.id));
   };
 
-  // Autres entreprises du portefeuille liées aux mêmes contreparties (API : calculé côté serveur)
-  const liees = useMemo(() => {
-    const visibles = [...gauche, ...droite].filter((n) => n.risk_flag).concat([...gauche, ...droite].filter((n) => !n.risk_flag));
-    return visibles.map((n) => ({
-      n,
-      autres: (entreprise.liens_portefeuille ? entreprise.liens_portefeuille[n.id] ?? [] : entreprisesLiees(n.id, entreprise.mf))
-        .filter((o) => o.mf !== n.id)
-    })).filter((x) => x.autres.length).slice(0, LIEES_MAX);
-  }, [entreprise, gauche, droite]);
+  // Phrase de synthèse : ce que montre le graphe, en clair
+  const somme = (l) => l.reduce((s, n) => s + n.montant, 0);
+  const signalees = droite.filter((n) => n.risk_flag);
+  const r = entreprise.reseau_resume;
+  const hauteurCanvas = Math.min(620, Math.max(300, lignes * 66 + 40));
+  if (!tousNoeuds.length) return <Text c="dimmed" size="sm" ta="center" py="xl">Aucune contrepartie sur la période.</Text>;
 
-  const vide = !gauche.length && !droite.length;
   return (
-    <div ref={conteneur} className="flex flex-col gap-3">
-      <div className="grid grid-cols-3 text-[11px] font-semibold uppercase tracking-[0.05em] text-attenue">
-        <span>Paient l'entreprise</span>
-        <span className="flex items-center justify-center gap-1">Flux d'argent <ArrowRight size={12} aria-hidden="true" /></span>
-        <span className="text-right">Payés par l'entreprise</span>
-      </div>
-      {vide ? (
-        <p className="py-8 text-center text-[12.5px] text-attenue">Aucune contrepartie sur la période.</p>
-      ) : (
-        <svg viewBox={`0 0 ${L} ${H}`} width={L} height={H} role="img" aria-label={`Flux entre ${entreprise.company_name} et ses contreparties`} className="max-w-full">
-          <defs>
-            {[["prio", "var(--seg-prio)"], ["neutre", "var(--attenue)"]].map(([id, c]) => (
-              <marker key={id} id={`pointe-${id}`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
-                <path d="M0,0 L10,5 L0,10 z" fill={c} />
-              </marker>
-            ))}
-          </defs>
-          {!G.length && <text x={cw / 2} y={yc} textAnchor="middle" fontSize={11.5} fill="var(--attenue)">Aucun client déclaré</text>}
-          {!D.length && <text x={L - cw / 2} y={yc} textAnchor="middle" fontSize={11.5} fill="var(--attenue)">Aucun fournisseur déclaré</text>}
-          {G.map((n, i) => fleche(n, i, G, "gauche"))}
-          {D.map((n, i) => fleche(n, i, D, "droite"))}
-          <g transform={`translate(${xc},${yc - hc / 2})`}>
-            <title>{entreprise.company_name}</title>
-            <rect width={lc} height={hc} rx={10} fill="var(--carte)" stroke={couleurSegment(segCentre)} strokeWidth={2} />
-            {nomCentre.map((ligne, k) => (
-              <text key={k} x={lc / 2} y={22 + k * 16} textAnchor="middle" fontSize={12.5} fontWeight={700} fill="var(--encre)">{ligne}</text>
-            ))}
-            <text x={lc / 2} y={hc - 28} textAnchor="middle" fontSize={11} fill="var(--attenue)">score {entreprise.current_risk_score}/100</text>
-            <text x={lc / 2} y={hc - 12} textAnchor="middle" fontSize={11} fontWeight={600} fill={couleurSegment(segCentre)}>{SEGMENTS[segCentre]?.libelle}</text>
-          </g>
-          {G.map((n, i) => (
-            <Carte key={n.id} n={n} x={0} y={yDe(i, G.length)} l={cw} selectionnee={contrepartiesFiltrees.includes(n.label)}
-              onClic={() => clic(n)} onOuvrir={(mf) => navigate(`/entreprise/${mf}`)} />
-          ))}
-          {D.map((n, i) => (
-            <Carte key={n.id} n={n} x={L - cw} y={yDe(i, D.length)} l={cw} selectionnee={contrepartiesFiltrees.includes(n.label)}
-              onClic={() => clic(n)} onOuvrir={(mf) => navigate(`/entreprise/${mf}`)} />
-          ))}
-        </svg>
-      )}
+    <Stack gap="sm">
+      <Group justify="space-between" align="flex-start" wrap="nowrap" gap="md">
+        <Text size="sm" lh={1.5} className="max-w-[720px]">
+          {r ? `Du ${fmtMoisIso(r.debut)} au ${fmtMoisIso(r.fin)}, ` : ""}
+          <b>{gauche.length} client{gauche.length > 1 ? "s" : ""}</b> ont payé <b>{fmtCompact(somme(gauche))}</b> à l'entreprise ; elle a payé{" "}
+          <b>{fmtCompact(somme(droite))}</b> à <b>{droite.length} fournisseur{droite.length > 1 ? "s" : ""}</b>
+          {signalees.length > 0 && <>, dont <Text span c="red.7" fw={700}>{fmtCompact(somme(signalees))} ({Math.round((100 * somme(signalees)) / Math.max(1, somme(droite)))} %) à {signalees.length} contrepartie{signalees.length > 1 ? "s" : ""} signalée{signalees.length > 1 ? "s" : ""}</Text></>}.
+        </Text>
+        <SegmentedControl size="xs" value={vue} onChange={setVue} data={[{ value: "toutes", label: "Toutes" }, { value: "signalees", label: "Signalées" }]} />
+      </Group>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11.5px] text-attenue">
-        <span className="inline-flex items-center gap-1.5"><svg width="20" height="8" aria-hidden="true"><line x1="0" y1="4" x2="14" y2="4" stroke="var(--attenue)" strokeWidth="2" /><path d="M13,0 L20,4 L13,8 z" fill="var(--attenue)" /></svg>sens du paiement, épaisseur = montant</span>
-        <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-sm border-2" style={{ borderColor: "var(--seg-prio)" }} />contrepartie signalée</span>
-        <span className="inline-flex items-center gap-1.5"><svg width="20" height="6" aria-hidden="true"><line x1="0" y1="3" x2="20" y2="3" stroke="var(--attenue)" strokeWidth="2" strokeDasharray="5 3" /></svg>relation nouvelle (moins de 18 mois)</span>
-        {(tout.gauche || tout.droite) && (
-          <button type="button" onClick={() => setTout({ gauche: false, droite: false })} className="font-semibold text-action-texte">Regrouper les petites contreparties</button>
+      <div style={{ height: hauteurCanvas }} className="relative overflow-hidden rounded-lg border border-bordure bg-fond">
+        <ReactFlow nodes={nodes} edges={edges} nodeTypes={TYPES_NOEUDS} onNodeClick={clic} fitView fitViewOptions={{ padding: 0.08 }}
+          nodesDraggable={false} nodesConnectable={false} elementsSelectable={false} zoomOnScroll={false} zoomOnDoubleClick={false}
+          preventScrolling={false} minZoom={0.3} maxZoom={1.6} proOptions={{ hideAttribution: true }}>
+          <Background gap={18} size={1} color="#e2e8f0" />
+          <Controls showInteractive={false} position="bottom-right" />
+          <Panel position="top-left">
+            <Text size="xs" fw={700} c="dimmed" tt="uppercase" lts="0.05em">Paient l'entreprise</Text>
+          </Panel>
+          <Panel position="top-right">
+            <Text size="xs" fw={700} c="dimmed" tt="uppercase" lts="0.05em">Payés par l'entreprise</Text>
+          </Panel>
+          {noeudChoisi && (
+            <Panel position="top-center">
+              <Explication n={noeudChoisi} entreprise={entreprise} onFermer={() => setChoisi(null)} onFiltrer={(l) => { onClicContrepartie(l); setChoisi(null); }} />
+            </Panel>
+          )}
+        </ReactFlow>
+      </div>
+
+      <Group gap="lg" wrap="wrap">
+        <Group gap={6}><ArrowRight size={14} className="text-attenue" /><Text size="xs" c="dimmed">flèche = sens du paiement, épaisseur = montant</Text></Group>
+        <Group gap={6}><ThemeIcon size={14} radius="xl" color="red" variant="light"><AlertTriangle size={9} /></ThemeIcon><Text size="xs" c="dimmed">contrepartie signalée (cliquer pour le motif)</Text></Group>
+        <Group gap={6}><svg width="22" height="6" aria-hidden="true"><line x1="0" y1="3" x2="22" y2="3" stroke={GRIS} strokeWidth="2" strokeDasharray="6 4" /></svg><Text size="xs" c="dimmed">relation de moins de 18 mois</Text></Group>
+        {r && (
+          <Tooltip label={`Sources : ${r.sources}`}>
+            <Group gap={6} className="cursor-help"><History size={13} className="text-attenue" />
+              <Text size="xs" c="dimmed">
+                {r.relations_affichees} relation{r.relations_affichees > 1 ? "s" : ""} active{r.relations_affichees > 1 ? "s" : ""} sur 12 mois
+                {r.relations_anciennes > 0 && ` · ${r.relations_anciennes} plus ancienne${r.relations_anciennes > 1 ? "s" : ""} (arrêtée${r.relations_anciennes > 1 ? "s" : ""} avant ${fmtMoisIso(r.debut)}) non affichée${r.relations_anciennes > 1 ? "s" : ""}`}
+              </Text>
+            </Group>
+          </Tooltip>
         )}
-      </div>
+        {(tout.gauche || tout.droite) && <Anchor size="xs" onClick={() => setTout({ gauche: false, droite: false })}>Regrouper les petites contreparties</Anchor>}
+      </Group>
+    </Stack>
+  );
+}
 
-      {liees.length > 0 && (
-        <div className="flex flex-col gap-1.5 border-t border-bordure pt-3">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-attenue">Mêmes contreparties dans le portefeuille</span>
-          {liees.map(({ n, autres }) => (
-            <div key={n.id} className="flex min-w-0 items-center gap-1.5 overflow-hidden text-[12px]">
-              <span className={`mr-1 max-w-[190px] shrink-0 truncate font-medium ${n.risk_flag ? "text-prio-texte" : "text-encre-2"}`} title={n.label}>{n.risk_flag && "⚠ "}{n.label}</span>
-              {autres.length > CHIPS_MAX && <span className="order-last shrink-0 text-[11.5px] text-attenue">+{autres.length - CHIPS_MAX}</span>}
-              {autres.slice(0, CHIPS_MAX).map((o) => (
-                <button key={o.mf} type="button" onClick={() => navigate(`/entreprise/${o.mf}`)}
-                  title={o.company_name}
-                  className="inline-flex min-w-0 max-w-[200px] items-center gap-1 rounded-full border border-bordure px-2 py-0.5 text-[11.5px] text-encre-2 hover:border-attenue hover:text-encre">
-                  <span className="size-1.5 shrink-0 rounded-full" style={{ background: couleurSegment(o.segment) }} />
-                  <span className="truncate">{o.company_name}</span><ArrowUpRight size={11} className="shrink-0" aria-hidden="true" />
-                </button>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+export default function GrapheReseau(props) {
+  return (
+    <ReactFlowProvider>
+      <Graphe {...props} />
+    </ReactFlowProvider>
   );
 }

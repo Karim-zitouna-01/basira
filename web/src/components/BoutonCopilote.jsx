@@ -1,10 +1,10 @@
-import { MessageSquare } from "lucide-react";
+import { Button } from "@mantine/core";
+import { MessageSquare, PanelRightClose } from "lucide-react";
 
 export default function BoutonCopilote({ copilote }) {
-  return (
-    <button type="button" onClick={copilote.basculer} aria-pressed={copilote.ouvert}
-      className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-semibold ${copilote.ouvert ? "border border-bordure bg-carte text-encre" : "bg-action text-action-encre"}`}>
-      <MessageSquare size={14} aria-hidden="true" />{copilote.ouvert ? "Masquer le copilote" : "Copilote IA"}
-    </button>
+  return copilote.ouvert ? (
+    <Button variant="default" size="sm" onClick={copilote.basculer} aria-pressed leftSection={<PanelRightClose size={15} />}>Masquer le copilote</Button>
+  ) : (
+    <Button size="sm" onClick={copilote.basculer} aria-pressed={false} leftSection={<MessageSquare size={15} />}>Copilote IA</Button>
   );
 }

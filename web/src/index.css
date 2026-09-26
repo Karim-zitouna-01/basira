@@ -1,3 +1,5 @@
+/* Ordre des couches : Mantine après le reset de Tailwind, les utilitaires Tailwind gardent le dernier mot */
+@layer theme, base, mantine, components, utilities;
 @import "tailwindcss";
 
 /* Jetons de couleur : chaque palette candidate redéfinit les mêmes variables.

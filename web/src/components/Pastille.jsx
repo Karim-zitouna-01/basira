@@ -1,18 +1,15 @@
+import { Badge } from "@mantine/core";
 import { SEGMENTS } from "../lib/palettes.js";
+import { COULEURS_SEGMENT } from "../lib/theme.js";
 
 // Statut de risque : point de couleur + libellé (jamais la couleur seule)
 export default function Pastille({ segment, taille = "sm" }) {
   const s = SEGMENTS[segment];
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full font-semibold ${taille === "lg" ? "px-3 py-1 text-[13px]" : "px-2 py-0.5 text-[11.5px]"}`}
-      style={{
-        color: `var(--seg-${s.jeton}-texte)`,
-        background: `color-mix(in srgb, var(--seg-${s.jeton}) 14%, white)`
-      }}
-    >
-      <span className="size-2 rounded-full" style={{ background: `var(--seg-${s.jeton})` }} />
+    <Badge variant="light" color={COULEURS_SEGMENT[segment]} size={taille === "lg" ? "md" : "sm"}
+      leftSection={<span className="block size-1.5 rounded-full" style={{ background: COULEURS_SEGMENT[segment] }} />}
+      styles={{ root: { flexShrink: 0, overflow: "visible" }, label: { color: `var(--seg-${s.jeton}-texte)`, overflow: "visible" } }}>
       {s.libelle}
-    </span>
+    </Badge>
   );
 }

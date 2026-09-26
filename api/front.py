@@ -117,17 +117,33 @@ class FrontStore:
     def _segment(self, mf, mois=None):
         return self.s.scores.get((mf, mois or self.mois), {}).get("segment")
 
-    def _signalee(self, contrepartie: str, mf: str) -> bool:
-        if contrepartie in self.s.identites:
-            return self.s._est_coquille(contrepartie, self.mois) or self._segment(contrepartie) == "PRIORITAIRE"
+    def _motif(self, contrepartie: str, mf: str) -> str | None:
+        """Pourquoi une contrepartie est signalée (None si elle ne l'est pas) — affiché tel quel dans l'interface."""
+        s = self.s
+        if contrepartie in s.identites:
+            if s._est_coquille(contrepartie, self.mois):
+                return "Profil de société coquille : sans salarié, créée récemment, reçoit bien plus que son CA déclaré"
+            r = s.scores.get((contrepartie, self.mois))
+            if r is not None and r["segment"] == "PRIORITAIRE":
+                return f"Entreprise elle-même prioritaire (score {round(r['score'])}/100)"
+            return None
         if contrepartie in self.fe_partages:
-            # nouveau pour cette entreprise aussi
-            return any(a["cible"] == contrepartie and str(a["premiere_date"])[:7] >= _mois_moins(self.mois, 18)
-                       for a in self.s.adj.get(mf, []) if a["source"] == mf)
-        return False
+            nouveau = any(a["cible"] == contrepartie and str(a["premiere_date"])[:7] >= _mois_moins(self.mois, 18)
+                          for a in s.adj.get(mf, []) if a["source"] == mf)
+            if nouveau:
+                n = sum(1 for a in s.adj.get(contrepartie, []) if a["type_relation"] == "IMPORT_FOURNISSEUR"
+                        and str(a["premiere_date"])[:7] >= _mois_moins(self.mois, 18))
+                return f"Nouveau fournisseur étranger apparu en même temps chez {n} importateurs"
+        return None
+
+    def _signalee(self, contrepartie: str, mf: str) -> bool:
+        return self._motif(contrepartie, mf) is not None
 
     def _declencheur(self, r) -> str:
-        top = [c for c in sorted(r["contributions"], key=lambda c: -c["points"]) if c["points"] >= 1][:2]
+        # seulement pour les entreprises à surveiller : ailleurs, les signaux faibles ne « déclenchent » rien
+        if r["segment"] not in ("PRIORITAIRE", "SURVEILLANCE"):
+            return "Aucun signal notable"
+        top = [c for c in sorted(r["contributions"], key=lambda c: -c["points"]) if c["points"] >= 5][:2]
         return " · ".join(LIBELLES_SIGNAUX.get(c["code_signal"], c["code_signal"]) for c in top) or "Aucun signal notable"
 
     def _resume(self, mf) -> dict:
@@ -191,7 +207,7 @@ class FrontStore:
                 "factures_tj_dt": 0, "arrieres_rafik_dt": 0,
             })
         d["operations"] = self._operations(mf)
-        d["network_nodes"], d["liens_portefeuille"] = self._reseau(mf)
+        d["network_nodes"], d["liens_portefeuille"], d["reseau_resume"] = self._reseau(mf)
         d["controles_passes"] = [{"date": c["date_avis"], "type": f"Contrôle {str(c['type_controle']).lower()}",
                                   "resultat": CATEGORIES_CONTROLE.get(c["categorie_resultat"], c["categorie_resultat"]),
                                   "montant_redresse_dt": c["montant_redresse_total"]} for c in s.controles.get(mf, [])]
@@ -245,8 +261,10 @@ class FrontStore:
         s = self.s
         par_id = {}
         nouveau = _mois_moins(self.mois, MOIS_NOUVELLE_RELATION)
+        anciennes = 0
         for a in s.adj.get(mf, []):
             if str(a["derniere_date"])[:10] < DEBUT or str(a["premiere_date"])[:10] > FIN:
+                anciennes += 1  # relation arrêtée avant la fenêtre : comptée, pas dessinée
                 continue
             t, sortant = a["type_relation"], a["source"] == mf
             autre = a["cible"] if sortant else a["source"]
@@ -255,15 +273,19 @@ class FrontStore:
             genre, relation = self.RELATIONS[(t, sortant)]
             nom = s.noms.get(autre) or s.noms_fe.get(autre) or s.noms_ap.get(autre) or autre
             n = par_id.setdefault(autre, {"id": autre, "label": nom, "type": genre, "relation": relation,
-                                          "sens": "sortant" if sortant else "entrant", "risk_flag": self._signalee(autre, mf),
+                                          "sens": "sortant" if sortant else "entrant", "motif": self._motif(autre, mf),
                                           "montant_dt": 0.0, "depuis": str(a["premiere_date"])[:10],
                                           "nouvelle": str(a["premiere_date"])[:7] >= nouveau,
                                           "segment": self._segment(autre) if autre in s.identites else None,
                                           "coquille": s._est_coquille(autre, self.mois)})
             n["montant_dt"] = round(n["montant_dt"] + float(a["montant_total"] or 0), 3)
-        noeuds = sorted(par_id.values(), key=lambda n: (not n["risk_flag"], -n["montant_dt"]))[:max_contreparties]
+        for n in par_id.values():
+            n["risk_flag"] = n["motif"] is not None
+        tous = sorted(par_id.values(), key=lambda n: (not n["risk_flag"], -n["montant_dt"]))
+        noeuds = tous[:max_contreparties]
         liens = {}
         for n in noeuds:
+            n["nb_liees"] = 0
             if n["type"] == "Acheteur public":
                 continue  # les acheteurs publics paient des centaines d'entreprises : pas de lien de niveau 2
             autres = []
@@ -273,6 +295,10 @@ class FrontStore:
                     autres.append({"mf": x, "company_name": s.noms[x], "segment": self._segment(x) or "NORMAL",
                                    "_p": self._segment(x) == "PRIORITAIRE"})
             autres.sort(key=lambda o: not o.pop("_p"))
+            n["nb_liees"] = len(autres)
             if autres:
                 liens[n["id"]] = autres[:max_liees]
-        return noeuds, liens
+        resume = {"debut": FENETRE[0], "fin": FENETRE[-1], "relations_fenetre": len(tous), "relations_affichees": len(noeuds),
+                  "relations_anciennes": anciennes,
+                  "sources": "annexe V (achats déclarés, exercice 2025), douane (SINDA), ADEB, annexe II (honoraires)"}
+        return noeuds, liens, resume

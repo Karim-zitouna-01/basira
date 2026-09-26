@@ -8,6 +8,10 @@ import "@fontsource/public-sans/700.css";
 import "@fontsource/ibm-plex-mono/400.css";
 import "../node_modules/dc/dist/style/dc.css";
 import "./index.css";
+import "@mantine/core/styles.layer.css";
+import "@xyflow/react/dist/style.css";
+import { MantineProvider } from "@mantine/core";
+import { theme } from "./lib/theme.js";
 import { chargerPortefeuille, modeApi } from "./lib/donnees.js";
 
 const racine = createRoot(document.getElementById("root"));
@@ -20,9 +24,11 @@ chargerPortefeuille()
   .then(({ default: App }) =>
     racine.render(
       <StrictMode>
+        <MantineProvider theme={theme} defaultColorScheme="light">
         <BrowserRouter>
           <App />
         </BrowserRouter>
+        </MantineProvider>
       </StrictMode>
     )
   )
