@@ -20,7 +20,7 @@ import pandas as pd
 from scoring import config
 from scoring.io import lire_csv
 
-from .store_reel import RealStore, _mois_moins
+from .store_reel import MOIS_NOUVELLE_RELATION, RealStore, _mois_moins
 
 log = logging.getLogger("basira.front")
 
@@ -232,26 +232,38 @@ class FrontStore:
                     "Fournisseur local", r["montant_ttc"], r["id_ligne"], observation=obs)
         return sorted(ops, key=lambda o: o["date"])
 
-    def _reseau(self, mf, max_contreparties: int = 12, max_liees: int = 4):
+    # (type de relation, l'entreprise paie ?) → (type de contrepartie, libellé de la relation)
+    RELATIONS = {("IMPORT_FOURNISSEUR", True): ("Fournisseur étranger", "Import"),
+                 ("ACHAT_LOCAL_A5", True): ("Fournisseur local", "Achat · annexe V"),
+                 ("ACHAT_LOCAL_A5", False): ("Client", "Vente · annexe V"),
+                 ("HONORAIRES_A2", True): ("Prestataire", "Honoraires"),
+                 ("HONORAIRES_A2", False): ("Client (honoraires)", "Honoraires reçus"),
+                 ("PAIEMENT_PUBLIC", False): ("Acheteur public", "Paiement public")}
+
+    def _reseau(self, mf, max_contreparties: int = 40, max_liees: int = 4):
+        """Contreparties (flux sur la fenêtre) : `sens` = sortant si l'entreprise paie la contrepartie, entrant sinon."""
         s = self.s
         par_id = {}
+        nouveau = _mois_moins(self.mois, MOIS_NOUVELLE_RELATION)
         for a in s.adj.get(mf, []):
             if str(a["derniere_date"])[:10] < DEBUT or str(a["premiere_date"])[:10] > FIN:
                 continue
             t, sortant = a["type_relation"], a["source"] == mf
             autre = a["cible"] if sortant else a["source"]
-            genre = {("IMPORT_FOURNISSEUR", True): "Fournisseur étranger", ("ACHAT_LOCAL_A5", True): "Fournisseur local",
-                     ("ACHAT_LOCAL_A5", False): "Client", ("HONORAIRES_A2", True): "Prestataire",
-                     ("HONORAIRES_A2", False): "Client (honoraires)", ("PAIEMENT_PUBLIC", False): "Acheteur public"}.get((t, sortant))
-            if genre is None:
+            if (t, sortant) not in self.RELATIONS:
                 continue
+            genre, relation = self.RELATIONS[(t, sortant)]
             nom = s.noms.get(autre) or s.noms_fe.get(autre) or s.noms_ap.get(autre) or autre
-            n = par_id.setdefault(autre, {"id": autre, "label": nom, "type": genre, "risk_flag": self._signalee(autre, mf), "_m": 0.0})
-            n["_m"] += float(a["montant_total"] or 0)
-        noeuds = sorted(par_id.values(), key=lambda n: (not n["risk_flag"], -n["_m"]))[:max_contreparties]
+            n = par_id.setdefault(autre, {"id": autre, "label": nom, "type": genre, "relation": relation,
+                                          "sens": "sortant" if sortant else "entrant", "risk_flag": self._signalee(autre, mf),
+                                          "montant_dt": 0.0, "depuis": str(a["premiere_date"])[:10],
+                                          "nouvelle": str(a["premiere_date"])[:7] >= nouveau,
+                                          "segment": self._segment(autre) if autre in s.identites else None,
+                                          "coquille": s._est_coquille(autre, self.mois)})
+            n["montant_dt"] = round(n["montant_dt"] + float(a["montant_total"] or 0), 3)
+        noeuds = sorted(par_id.values(), key=lambda n: (not n["risk_flag"], -n["montant_dt"]))[:max_contreparties]
         liens = {}
         for n in noeuds:
-            n.pop("_m")
             if n["type"] == "Acheteur public":
                 continue  # les acheteurs publics paient des centaines d'entreprises : pas de lien de niveau 2
             autres = []

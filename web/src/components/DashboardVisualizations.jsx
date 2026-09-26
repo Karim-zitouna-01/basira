@@ -20,6 +20,7 @@ import GrapheReseau from "./GrapheReseau.jsx";
 const auMois = (m) => new Date(`${m}-01T00:00:00`);
 const versIso = d3.timeFormat("%Y-%m");
 const signe = (v) => (v >= 0 ? "+" : "");
+const echapper = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" })[c]);
 
 function Carte({ titre, icone: Icone, aide, actions, children, className = "" }) {
   return (
@@ -218,15 +219,17 @@ export default function DashboardVisualizations({ entreprise, palette, periode, 
       .html({ some: "<strong>%filter-count</strong> sur %total-count opérations", all: "<strong>%total-count</strong> opérations" });
     new dc.DataTable(refs.table.current, groupe)
       .dimension(dimTable).size(Infinity).showSections(false).sortBy((o) => o.jour).order(d3.descending)
+      // 4 colonnes lisibles ; opération, référence, circuit et observation en seconde ligne (plus de table tronquée)
       .columns([
-        { label: "Date", format: (o) => fmtDate(o.date) },
-        { label: "Système", format: (o) => o.source },
-        { label: "Opération", format: (o) => o.type_operation },
-        { label: "Contrepartie", format: (o) => `${o.contrepartie_signalee ? "⚠ " : ""}${o.contrepartie}` },
-        { label: "Montant", format: (o) => fmtDT(o.montant_dt) },
-        { label: "Circuit", format: (o) => o.circuit ?? "—" },
-        { label: "Référence", format: (o) => o.reference },
-        { label: "Observation", format: (o) => o.observation ?? "" }
+        { label: "Date", format: (o) => `<span class="chiffres whitespace-nowrap">${fmtDate(o.date)}</span>` },
+        { label: "Système", format: (o) => `<span class="whitespace-nowrap">${echapper(o.source)}</span>` },
+        {
+          label: "Contrepartie",
+          format: (o) => `<span class="${o.contrepartie_signalee ? "font-semibold text-prio-texte" : "text-encre"}">${o.contrepartie_signalee ? "⚠ " : ""}${echapper(o.contrepartie)}</span>`
+            + `<span class="block text-[11px] text-attenue">${echapper([o.type_operation, o.circuit && `circuit ${o.circuit}`, o.reference].filter(Boolean).join(" · "))}</span>`
+            + (o.observation ? `<span class="block text-[11px] font-semibold text-surv-texte">${echapper(o.observation)}</span>` : "")
+        },
+        { label: "Montant", format: (o) => `<span class="chiffres block whitespace-nowrap text-right">${fmtDT(o.montant_dt)}</span>` }
       ]);
 
     // --- Résumé de la sélection : indicateurs, réseau, pastilles, copilote ---
@@ -340,7 +343,7 @@ export default function DashboardVisualizations({ entreprise, palette, periode, 
               const dlt = kpis.score.valeur - kpis.score.reference;
               return { texte: `${signe(dlt)}${dlt} pts depuis ${fmtMoisIso(kpis.score.mois_reference)}`, sens: dlt > 0 ? "hausse" : dlt < 0 ? "baisse" : "stable", ton: dlt > 0 ? "mauvais" : "bon" };
             })()} />
-          <CarteKpi icone={Scale} titre={modeApi ? "Enjeu estimé (12 mois glissants)" : "Écart de recoupement"} valeur={fmtCompact(kpis.ecart.valeur)} variation={variationPct(kpis.ecart.valeur, kpis.ecart.precedent)} />
+          <CarteKpi icone={Scale} titre={modeApi ? "Enjeu estimé" : "Écart de recoupement"} aide={modeApi ? "Droits éludés estimés sur 12 mois glissants, en fin de période" : undefined} valeur={fmtCompact(kpis.ecart.valeur)} variation={variationPct(kpis.ecart.valeur, kpis.ecart.precedent)} />
           <CarteKpi icone={Waypoints} titre="Flux observés" valeur={fmtCompact(kpis.flux.valeur)}
             variation={{ ...variationPct(kpis.flux.valeur, kpis.flux.precedent), ton: "neutre" }} aide={`Somme des opérations ${SOURCES.map((s) => s.id).join(", ")} de la sélection`} />
           <CarteKpi icone={AlertTriangle} titre="Contreparties signalées" valeur={kpis.part_signalee.valeur} unite="% des flux"
@@ -382,10 +385,16 @@ export default function DashboardVisualizations({ entreprise, palette, periode, 
         </Carte>
       </div>
 
+      <Carte titre="Réseau de contreparties" icone={Waypoints}
+        aide="Montants de la sélection. Cliquez une contrepartie pour filtrer les opérations ; ↗ ouvre la fiche d'une entreprise du portefeuille.">
+        <GrapheReseau entreprise={entreprise} montants={montants} contrepartiesFiltrees={filtres.contreparties} onClicContrepartie={basculerContrepartie} palette={palette} />
+      </Carte>
+
       <div className="grid gap-4 @2xl:grid-cols-3">
-        <Carte titre="Réseau de contreparties" icone={Waypoints} className="@2xl:col-span-2"
-          aide="Taille des nœuds : montant de la sélection. Cliquez une contrepartie pour filtrer, une autre entreprise pour ouvrir sa fiche.">
-          <GrapheReseau entreprise={entreprise} montants={montants} contrepartiesFiltrees={filtres.contreparties} onClicContrepartie={basculerContrepartie} palette={palette} />
+        <Carte titre="Opérations de la sélection" icone={ListChecks} className="@2xl:col-span-2" actions={<span ref={refs.comptage} className="text-[12.5px] text-encre-2" />}>
+          <div className="max-h-[420px] overflow-auto rounded-lg border border-bordure">
+            <table ref={refs.table} className="dc-data-table" />
+          </div>
         </Carte>
         <Carte titre="Historique" icone={History}>
           <ol className="flex flex-col gap-3">
@@ -402,12 +411,6 @@ export default function DashboardVisualizations({ entreprise, palette, periode, 
           </ol>
         </Carte>
       </div>
-
-      <Carte titre="Opérations de la sélection" icone={ListChecks} actions={<span ref={refs.comptage} className="text-[12.5px] text-encre-2" />}>
-        <div className="max-h-[380px] overflow-auto rounded-lg border border-bordure">
-          <table ref={refs.table} className="dc-data-table" />
-        </div>
-      </Carte>
     </div>
   );
 }

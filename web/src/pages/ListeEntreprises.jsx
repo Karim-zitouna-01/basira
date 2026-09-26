@@ -24,16 +24,17 @@ const LIGNES_MAX = 200; // le portefeuille réel compte 5 250 entreprises : la t
 const auMois = (m) => new Date(`${m}-01T00:00:00`);
 const division = (nat) => nat.split(" - ")[0].slice(0, 2);
 
+// Colonnes par ordre d'importance ; `cache` : masquée quand la page est étroite (copilote ouvert, petit écran)
 const COLONNES = [
   { cle: "nom", libelle: "Entreprise", val: (e) => e.company_name },
-  { cle: "mf", libelle: "Matricule fiscal", val: (e) => e.company_id },
-  { cle: "secteur", libelle: "NAT", val: (e) => e.sector_nacef },
-  { cle: "gouv", libelle: "Gouvernorat", val: (e) => e.gouvernorat, large: true },
   { cle: "score", libelle: "Score", val: (e) => e.current_risk_score, num: true },
   { cle: "statut", libelle: "Statut", val: (e) => ORDRE_SEGMENTS.indexOf(e.segment) },
-  { cle: "ecart", libelle: modeApi ? "Enjeu estimé" : "Écart", val: (e) => e.recoupment_gap_dt, num: true },
-  { cle: "action", libelle: "Action recommandée", val: (e) => e.recommended_action },
-  { cle: "declencheur", libelle: "Déclencheur principal", val: (e) => e.primary_trigger }
+  { cle: "ecart", libelle: modeApi ? "Enjeu" : "Écart", val: (e) => e.recoupment_gap_dt, num: true },
+  { cle: "declencheur", libelle: "Déclencheur principal", val: (e) => e.primary_trigger, cache: "hidden @3xl:table-cell" },
+  { cle: "action", libelle: "Action recommandée", val: (e) => e.recommended_action, cache: "hidden @5xl:table-cell" },
+  { cle: "mf", libelle: "Matricule fiscal", val: (e) => e.company_id, cache: "hidden @6xl:table-cell" },
+  { cle: "secteur", libelle: "NAT", val: (e) => e.sector_nacef, cache: "hidden @6xl:table-cell" },
+  { cle: "gouv", libelle: "Gouvernorat", val: (e) => e.gouvernorat, cache: "hidden @7xl:table-cell" }
 ];
 
 const variationPct = (actuel, precedent) => (precedent ? Math.round((100 * (actuel - precedent)) / precedent) : null);
@@ -194,7 +195,7 @@ export default function ListeEntreprises({ copilote, palette }) {
   const vImports = variationPct(kpi.imports, kpi.importsPrec);
 
   return (
-    <div ref={racineRef} className="flex flex-col gap-4 px-6 py-5">
+    <div ref={racineRef} className="@container flex flex-col gap-4 px-6 py-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-baseline gap-2">
           <h1 className="flex items-center gap-2 text-[17px] font-bold text-encre"><Building2 size={17} aria-hidden="true" />Entreprises</h1>
@@ -206,7 +207,7 @@ export default function ListeEntreprises({ copilote, palette }) {
       </header>
 
       {/* Indicateurs globaux : se recalculent selon les filtres ci-dessous */}
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Indicateurs du portefeuille">
+      <section className="grid grid-cols-1 gap-3 @xl:grid-cols-2 @5xl:grid-cols-4" aria-label="Indicateurs du portefeuille">
         <CarteKpi ref={sparks.prio} icone={ShieldAlert} titre="Entreprises à haut risque" valeur={kpi.prio}
           variation={{ texte: `${signe(kpi.prio - kpi.prioPrec)}${kpi.prio - kpi.prioPrec} vs ${fmtMoisIso(meta.mois_couverts.at(-2))}`, sens: kpi.prio > kpi.prioPrec ? "hausse" : kpi.prio < kpi.prioPrec ? "baisse" : "stable", ton: kpi.prio > kpi.prioPrec ? "mauvais" : "neutre" }}
           onClick={() => maj("statut")(hautRisqueSeul ? [] : ["PRIORITAIRE"])} actif={hautRisqueSeul} aide="Cliquer pour n'afficher que les entreprises à haut risque" />
@@ -247,7 +248,7 @@ export default function ListeEntreprises({ copilote, palette }) {
             <tr className="border-b border-bordure text-left text-[12px] text-attenue">
               <th className="w-9 px-2.5 py-2.5"><span className="sr-only">Suivi</span></th>
               {COLONNES.map((c) => (
-                <th key={c.cle} className={`whitespace-nowrap px-2.5 py-2.5 font-medium ${c.num ? "text-right" : ""} ${c.large ? "hidden 2xl:table-cell" : ""}`}
+                <th key={c.cle} className={`whitespace-nowrap px-2.5 py-2.5 font-medium ${c.num ? "text-right" : ""} ${c.cache ?? ""}`}
                   aria-sort={tri.cle === c.cle ? (tri.sens === "asc" ? "ascending" : "descending") : "none"}>
                   <button type="button" onClick={() => trier(c.cle)} className={`inline-flex items-center gap-1 hover:text-encre ${tri.cle === c.cle ? "text-encre" : ""}`}>
                     {c.libelle}
@@ -270,20 +271,20 @@ export default function ListeEntreprises({ copilote, palette }) {
                       <Star size={14} fill={suivie ? "var(--seg-surv)" : "none"} stroke={suivie ? "var(--seg-surv)" : "currentColor"} />
                     </button>
                   </td>
-                  <td className="whitespace-nowrap px-2.5 py-2">
-                    <Link to={`/entreprise/${e.mf}`} onClick={(ev) => ev.stopPropagation()} className="font-semibold text-encre hover:underline">{e.company_name}</Link>
+                  <td className="max-w-[190px] truncate px-2.5 py-2 @3xl:max-w-[300px]">
+                    <Link to={`/entreprise/${e.mf}`} onClick={(ev) => ev.stopPropagation()} title={e.company_name} className="font-semibold text-encre hover:underline">{e.company_name}</Link>
                   </td>
-                  <td className="whitespace-nowrap px-2.5 py-2 font-mono text-[12px] text-encre-2">{e.company_id}</td>
-                  <td className="chiffres whitespace-nowrap px-2.5 py-2 text-encre-2" title={e.sector_nacef}>{e.sector_nacef.split(" - ")[0]}</td>
-                  <td className="hidden whitespace-nowrap px-2.5 py-2 text-encre-2 2xl:table-cell">{e.gouvernorat}</td>
                   <td className="chiffres whitespace-nowrap px-2.5 py-2 text-right">
                     <span className="font-semibold text-encre">{e.current_risk_score}</span>{" "}
                     <span className={delta >= 10 ? "font-semibold text-prio-texte" : "text-attenue"}>{e.risk_delta_2m}</span>
                   </td>
                   <td className="px-2.5 py-2"><Pastille segment={e.segment} /></td>
                   <td className="chiffres whitespace-nowrap px-2.5 py-2 text-right text-encre">{e.recoupment_gap_dt ? fmtCompact(e.recoupment_gap_dt) : "—"}</td>
-                  <td className="whitespace-nowrap px-2.5 py-2 text-encre-2">{e.recommended_action}</td>
-                  <td className="w-full min-w-[140px] max-w-0 truncate px-2.5 py-2 text-encre-2" title={e.primary_trigger}>{e.primary_trigger}</td>
+                  <td className="hidden w-full min-w-[160px] max-w-0 truncate px-2.5 py-2 text-encre-2 @3xl:table-cell" title={e.primary_trigger}>{e.primary_trigger}</td>
+                  <td className="hidden whitespace-nowrap px-2.5 py-2 text-encre-2 @5xl:table-cell">{e.recommended_action}</td>
+                  <td className="hidden whitespace-nowrap px-2.5 py-2 font-mono text-[12px] text-encre-2 @6xl:table-cell">{e.company_id}</td>
+                  <td className="chiffres hidden whitespace-nowrap px-2.5 py-2 text-encre-2 @6xl:table-cell" title={e.sector_nacef}>{e.sector_nacef.split(" - ")[0]}</td>
+                  <td className="hidden whitespace-nowrap px-2.5 py-2 text-encre-2 @7xl:table-cell">{e.gouvernorat}</td>
                 </tr>
               );
             })}

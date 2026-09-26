@@ -17,6 +17,7 @@
   --color-action-texte: var(--action-texte);
   --color-prio: var(--seg-prio);
   --color-prio-texte: var(--seg-prio-texte);
+  --color-surv-texte: var(--seg-surv-texte);
   --font-sans: "Public Sans", "Segoe UI", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
 }
@@ -101,7 +102,11 @@ body {
 /* Table d'opérations (dc.dataTable) */
 table.dc-data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 table.dc-data-table th { position: sticky; top: 0; background: var(--fond-2); text-align: left; font-weight: 600; font-size: 11px; letter-spacing: .03em; text-transform: uppercase; color: var(--attenue); padding: 7px 10px; white-space: nowrap; }
-table.dc-data-table td { padding: 7px 10px; border-top: 1px solid var(--bordure); color: var(--encre-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+table.dc-data-table td { padding: 7px 10px; border-top: 1px solid var(--bordure); color: var(--encre-2); white-space: nowrap; font-variant-numeric: tabular-nums; vertical-align: top; }
+/* Colonne contrepartie : seule colonne élastique, elle passe à la ligne au lieu d'élargir la table */
+table.dc-data-table td:nth-child(3) { white-space: normal; width: 100%; }
+table.dc-data-table td:nth-child(3) span.block { overflow-wrap: anywhere; }
+table.dc-data-table th:last-child { text-align: right; }
 table.dc-data-table tr.dc-table-group { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -110,3 +115,22 @@ table.dc-data-table tr.dc-table-group { display: none; }
 
 /* Mini-courbes des cartes : sans axes */
 .sparkline g.axis, .sparkline .grid-line { display: none; }
+
+/* Réponses du copilote rendues en Markdown : typographie compacte, jetons de l'interface */
+.md > * + * { margin-top: 0.55em; }
+.md p { margin: 0; }
+.md strong { font-weight: 650; color: var(--encre); }
+.md h1, .md h2, .md h3, .md h4 { margin: 0.9em 0 0.3em; font-size: 13.5px; font-weight: 700; color: var(--encre); }
+.md ul, .md ol { margin: 0; padding-left: 1.2em; }
+.md ul { list-style: disc; }
+.md ol { list-style: decimal; }
+.md li { margin: 0.2em 0; padding-left: 0.15em; }
+.md li::marker { color: var(--attenue); }
+.md code { font-family: var(--font-mono); font-size: 11.5px; background: var(--fond-2); border-radius: 4px; padding: 0.05em 0.35em; }
+.md pre { background: var(--fond-2); border-radius: 8px; padding: 0.6em 0.8em; overflow-x: auto; }
+.md blockquote { border-left: 3px solid var(--bordure); padding-left: 0.7em; color: var(--encre-2); }
+.md hr { border: 0; border-top: 1px solid var(--bordure); }
+.md a { color: var(--action-texte); text-decoration: underline; text-underline-offset: 2px; }
+.md table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.md th, .md td { border-bottom: 1px solid var(--bordure); padding: 0.3em 0.4em; text-align: left; }
+.md th { color: var(--attenue); font-weight: 600; }

@@ -31,6 +31,8 @@ Règles impératives :
 5. Termine ta réponse par une ligne « SOURCES : » suivie des codes de signaux (tels qu'ils figurent dans les données) et des références de
    preuves (ex. douane_articles:2026/401/0034567-001) que tu as utilisés, séparés par des virgules.
 6. Les montants sont en dinars tunisiens : écris « DT » (ou « MD » pour les millions), jamais une autre devise.
+   Arrondis-les sans décimales (ex. « 44 987 DT », « 1,2 MD »). Mets en forme avec des listes Markdown courtes et du **gras**
+   pour les éléments clés ; pas de titres.
 7. Pour le réseau, respecte exactement le sens des relations décrit dans le champ « relations » (qui paie qui, qui est client).
 8. Si l'inspecteur demande une lettre, appelle rediger_lettre_demande_info et recopie la lettre intégralement, sans la résumer.
 """
@@ -44,6 +46,7 @@ Règles impératives :
 3. Tu ne décides jamais : tu aides l'inspecteur à choisir quels dossiers ouvrir en premier.
 4. Si une information n'est pas dans les données, dis-le simplement et invite à ouvrir la fiche de l'entreprise.
 5. Les montants sont en dinars tunisiens : écris « DT » (ou « MD » pour les millions), jamais une autre devise.
+   Arrondis-les sans décimales. Mets en forme avec des listes Markdown courtes et du **gras** ; pas de titres.
 """
 TAILLE_MAX_PAGE = 6000  # caractères du contexte de page joints au prompt
 

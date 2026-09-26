@@ -82,31 +82,28 @@ export default function FicheEntreprise({ copilote, palette }) {
   const suivie = favoris.includes(e.mf);
   const choix = idPeriode(periode);
   return (
-    <div className="flex flex-col gap-4 px-6 py-5">
-      <header className="flex flex-col gap-3">
-        <nav className="flex items-center gap-1 text-[12.5px] text-attenue" aria-label="Fil d'Ariane">
-          <Link to="/" className="hover:text-encre">Entreprises</Link>
-          <ChevronRight size={13} aria-hidden="true" />
-          <span className="text-encre-2">{e.company_name}</span>
-        </nav>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="flex min-w-0 flex-col gap-1">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-[21px] font-bold leading-tight text-encre">{e.company_name}</h1>
-              <Pastille segment={e.segment} />
-              <button type="button" onClick={() => basculerFavori(e.mf)} aria-pressed={suivie}
-                className="flex items-center gap-1 rounded-md border border-bordure px-2 py-0.5 text-[12px] text-encre-2 hover:border-attenue">
-                <Star size={13} fill={suivie ? "var(--seg-surv)" : "none"} stroke={suivie ? "var(--seg-surv)" : "currentColor"} aria-hidden="true" />
-                {suivie ? "Suivie" : "Suivre"}
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[12.5px] text-encre-2">
-              <span className="font-mono">{e.company_id}</span>
-              <span>NAT {e.sector_nacef}</span>
-              <span>{e.gouvernorat}</span>
-            </div>
+    <div className="@container flex flex-col gap-5 px-6 py-5">
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div className="flex min-w-0 flex-col gap-1">
+          <nav className="flex items-center gap-1 text-[12px] text-attenue" aria-label="Fil d'Ariane">
+            <Link to="/" className="hover:text-encre">Entreprises</Link>
+            <ChevronRight size={12} aria-hidden="true" />
+          </nav>
+          <div className="flex min-w-0 items-center gap-2.5">
+            <h1 className="truncate text-[21px] font-bold leading-tight text-encre" title={e.company_name}>{e.company_name}</h1>
+            <Pastille segment={e.segment} />
+            <button type="button" onClick={() => basculerFavori(e.mf)} aria-pressed={suivie} title={suivie ? "Ne plus suivre" : "Suivre ce dossier"}
+              className="grid size-7 shrink-0 place-items-center rounded-md text-attenue hover:bg-fond-2">
+              <Star size={15} fill={suivie ? "var(--seg-surv)" : "none"} stroke={suivie ? "var(--seg-surv)" : "currentColor"} aria-hidden="true" />
+            </button>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex min-w-0 gap-x-2 truncate text-[12.5px] text-attenue">
+            <span className="font-mono text-encre-2">{e.company_id}</span>·
+            <span className="truncate" title={e.sector_nacef}>NAT {e.sector_nacef}</span>·
+            <span>{e.gouvernorat}</span>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
             <label htmlFor="periode" className="flex items-center gap-1.5 rounded-md border border-bordure bg-carte px-2.5 py-1.5 text-[12.5px] text-encre-2">
               <CalendarDays size={14} aria-hidden="true" />
               <span className="sr-only">Période analysée</span>
@@ -117,16 +114,18 @@ export default function FicheEntreprise({ copilote, palette }) {
               </select>
             </label>
             <BoutonCopilote copilote={copilote} />
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-xl border border-bordure bg-carte px-4 py-2.5 text-[13px]">
-          <span className="min-w-0 text-encre"><span className="text-attenue">Déclencheur principal : </span>{e.primary_trigger}</span>
-          <span className="text-encre"><span className="text-attenue">Action recommandée : </span><span className="font-semibold">{e.recommended_action}</span>
-            <span className="text-attenue"> · la décision appartient à l'inspecteur</span></span>
         </div>
       </header>
 
-      {e.detail && <PourquoiScore key={`pourquoi-${e.mf}`} mf={e.mf} detail={e.detail} />}
+      {e.detail ? (
+        <PourquoiScore key={`pourquoi-${e.mf}`} mf={e.mf} detail={e.detail} />
+      ) : (
+        // Jeu fictif : pas de détail du score, on garde le déclencheur de D
+        <div className="rounded-xl border border-bordure bg-carte px-4 py-2.5 text-[13px] text-encre">
+          <span className="text-attenue">Déclencheur principal : </span>{e.primary_trigger}
+          <span className="text-attenue"> · Action recommandée : </span><span className="font-semibold">{e.recommended_action}</span>
+        </div>
+      )}
 
       <DashboardVisualizations key={e.mf} entreprise={e} palette={palette} periode={periode} onPeriode={surPeriode} onSelection={surSelection} />
     </div>
