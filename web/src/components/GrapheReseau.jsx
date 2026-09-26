@@ -1,24 +1,26 @@
-// Réseau de contreparties en flux d'argent (React Flow) : qui paie l'entreprise (à gauche) → l'entreprise → qui elle
-// paie (à droite). Chaque flèche suit le paiement et porte la relation et le montant ; une phrase résume le réseau ;
-// un clic sur une contrepartie ouvre son explication (relation, motif détaillé, entreprises liées).
-// « Déployer son réseau » ajoute les contreparties d'une contrepartie (signalées d'abord) : on remonte une chaîne
-// (client → fournisseur coquille → autres clients de la coquille…) ; une relation vers un nœud déjà affiché crée une
-// flèche vers lui, ce qui fait apparaître les boucles d'un réseau. Mode plein écran pour les grands réseaux.
+// Réseau de contreparties en flux d'argent (React Flow + dagre) : les payeurs à gauche, ceux qu'ils paient à droite.
+// - Mise en page automatique en couches (dagre) : le réseau reste lisible quand on « déploie » des contreparties
+//   (croisements minimisés, boucles gérées).
+// - Mode focus : survoler ou choisir un nœud estompe le reste ; la chaîne qui le relie à l'entreprise étudiée est
+//   animée dans le sens du paiement. Les montants ne s'affichent que sur les relations en focus quand le réseau est grand.
+// - Filtre « Signalées » appliqué à tout le réseau, y compris les réseaux déployés.
+// - Panneau d'explication compact en onglets (Pourquoi · Relation · Liens), motifs dépliables un par un.
 import { memo, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import dagre from "@dagrejs/dagre";
 import { Background, Controls, Handle, MarkerType, Panel, Position, ReactFlow, ReactFlowProvider, useReactFlow } from "@xyflow/react";
 import {
-  ActionIcon, Alert, Anchor, Badge, Button, CloseButton, Group, List, Modal, Paper, ScrollArea, SegmentedControl, Stack, Text,
-  ThemeIcon, Tooltip, UnstyledButton
+  Accordion, ActionIcon, Anchor, Avatar, Badge, Button, CloseButton, Group, Modal, Paper, ScrollArea, SegmentedControl,
+  Stack, Tabs, Text, ThemeIcon, Tooltip, UnstyledButton
 } from "@mantine/core";
-import { AlertTriangle, ArrowRight, ArrowUpRight, Filter, GitBranchPlus, History, Maximize2, Minimize2, Network } from "lucide-react";
+import { AlertTriangle, ArrowRight, ArrowUpRight, Filter, GitBranchPlus, GitBranchMinus, History, Link2, Maximize2, Minimize2, Network, Scale, Sparkles } from "lucide-react";
 import { chargerVoisins, entreprisesLiees, modeApi } from "../lib/donnees.js";
 import { SEGMENTS } from "../lib/palettes.js";
 import { COULEURS_SEGMENT } from "../lib/theme.js";
 import { fmtCompact, fmtDate, fmtDT, fmtMoisIso } from "../lib/format.js";
 
 const PAR_COTE = 6;           // contreparties visibles par côté avant regroupement
-const L_CARTE = 230, H_CARTE = 58, PAS = 74, X_CENTRE = 400, L_CENTRE = 190, X_DROITE = 800, DX_DEPLOIEMENT = 440;
+const L_CARTE = 236, H_CARTE = 58, L_CENTRE = 200;
 const ENTRANTS = new Set(["Client", "Client (honoraires)", "Acheteur public", "Importateur"]);
 const EST_MF = /^\d{7}[A-Z]{3}\d{3}$/;
 const ROUGE = "#dc2626", GRIS = "#94a3b8", VIOLET = "#7c3aed";
@@ -31,30 +33,37 @@ const SOURCE_RELATION = {
   "Vente · annexe V": "annexe V des clients (exercice 2025)", Honoraires: "annexe II (honoraires, loyers)",
   "Honoraires reçus": "annexe II des clients", "Paiement public": "ordonnances de paiement ADEB"
 };
+const initiales = (nom) => nom.replace(/^(Société|Ste|Sté)\s+/i, "").split(/[\s-]+/).filter(Boolean).slice(0, 2).map((m) => m[0]).join("").toUpperCase();
 
 // ---------------------------------------------------------------- nœuds
 const CarteContrepartie = memo(function CarteContrepartie({ data }) {
   const n = data.n;
   const signalee = n.risk_flag;
   const badge = n.agregat ? null : n.coquille ? ["Coquille", ROUGE] : signalee ? ["Signalée", ROUGE] : n.nouvelle ? ["Nouvelle", "#b45309"] : null;
+  const couleur = signalee ? ROUGE : n.segment ? COULEURS_SEGMENT[n.segment] : "#64748b";
   return (
-    <div className={`rounded-lg border bg-white px-3 py-2 shadow-sm ${data.selectionnee ? "ring-2 ring-[var(--mantine-color-basira-5)]" : ""} ${n.agregat ? "border-dashed" : ""}`}
-      style={{ width: L_CARTE, height: H_CARTE, borderColor: signalee ? ROUGE : "var(--bordure)", borderLeft: data.deploye ? `4px solid ${VIOLET}` : undefined,
-               opacity: n.horsSelection && !n.agregat ? 0.55 : 1, cursor: "pointer" }}>
-      {/* poignées des deux côtés : un nœud déployé peut être relié vers l'extérieur comme vers l'intérieur */}
+    <div className={`flex items-center gap-2 rounded-xl border bg-white px-2.5 transition-all duration-200 ${data.selectionnee ? "ring-2 ring-[var(--mantine-color-basira-5)] ring-offset-1" : ""} ${n.agregat ? "border-dashed" : ""}`}
+      style={{ width: L_CARTE, height: H_CARTE, borderColor: signalee ? "#fca5a5" : "var(--bordure)",
+               boxShadow: `${data.deploye ? `inset 3px 0 0 ${VIOLET},` : ""} 0 1px 2px rgba(15,23,42,.06), 0 4px 12px -6px rgba(15,23,42,.14)`,
+               opacity: data.estompe ? 0.22 : n.horsSelection && !n.agregat ? 0.6 : 1, cursor: "pointer" }}>
       <Handle id="tl" type="target" position={Position.Left} className="!opacity-0" />
       <Handle id="sl" type="source" position={Position.Left} className="!opacity-0" />
       <Handle id="tr" type="target" position={Position.Right} className="!opacity-0" />
       <Handle id="sr" type="source" position={Position.Right} className="!opacity-0" />
-      <div className="flex items-center gap-1.5">
-        {signalee && <AlertTriangle size={13} color={ROUGE} className="shrink-0" />}
-        <span className="min-w-0 flex-1 truncate text-[12.5px] font-semibold text-encre" title={n.label}>{n.label}</span>
-        {badge && <Badge size="xs" variant="light" color={badge[1]} className="shrink-0">{badge[0]}</Badge>}
-      </div>
-      <div className="mt-1 flex items-center gap-1.5 text-[11.5px] text-attenue">
-        <span className="chiffres font-semibold text-encre-2">{n.montant ? fmtCompact(n.montant) : "—"}</span>
-        {!n.agregat && <span className="truncate">· {n.type}</span>}
-        {n.agregat && <span>· cliquer pour afficher</span>}
+      {!n.agregat && (
+        <span className="grid size-8 shrink-0 place-items-center rounded-lg text-[11px] font-bold" style={{ background: `${couleur}1a`, color: couleur }}>
+          {signalee ? <AlertTriangle size={14} /> : initiales(n.label)}
+        </span>
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1">
+          <span className="min-w-0 flex-1 truncate text-[12.5px] font-semibold text-encre" title={n.label}>{n.label}</span>
+          {badge && <Badge size="xs" variant="light" color={badge[1]} className="shrink-0">{badge[0]}</Badge>}
+        </div>
+        <div className="mt-0.5 flex items-center gap-1 text-[11px] text-attenue">
+          <span className="chiffres font-semibold text-encre-2">{n.montant ? fmtCompact(n.montant) : "—"}</span>
+          <span className="truncate">· {n.agregat ? "cliquer pour afficher" : n.type}</span>
+        </div>
       </div>
     </div>
   );
@@ -68,7 +77,8 @@ const CarteEntreprise = memo(function CarteEntreprise({ data }) {
       style={{ top: `${((i + 1) / (Math.max(1, n) + 1)) * 100}%` }} />
   ));
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border-2 bg-white px-3 text-center shadow-md" style={{ width: L_CENTRE, height: data.hauteur, borderColor: couleur }}>
+    <div className="flex flex-col items-center justify-center rounded-2xl border-2 bg-white px-3 text-center shadow-[0_10px_30px_-12px_rgba(15,23,42,.35)]"
+      style={{ width: L_CENTRE, height: data.hauteur, borderColor: couleur }}>
       {poignees(nG, "target", Position.Left, "g")}
       {poignees(nD, "source", Position.Right, "d")}
       <span className="line-clamp-2 text-[13.5px] font-bold leading-tight text-encre">{e.company_name}</span>
@@ -100,73 +110,173 @@ function regrouper(liste, cote, tout) {
   }];
 }
 
-const arete = (id, source, target, n, sourceHandle, targetHandle, max) => {
-  const couleur = n.risk_flag ? ROUGE : GRIS;
-  const libelle = `${COURT[n.relation] ?? n.relation}${n.montant ? ` · ${fmtCompact(n.montant)}` : ""}`;
-  return {
-    id, source, target, sourceHandle, targetHandle, label: libelle,
-    markerEnd: { type: MarkerType.ArrowClosed, color: couleur, width: 16, height: 16 },
-    style: { stroke: couleur, strokeWidth: 1.4 + 3.6 * Math.sqrt(Math.min(1, n.montant / max)), strokeDasharray: n.nouvelle ? "6 4" : undefined,
-             opacity: n.horsSelection && !n.agregat ? 0.45 : 0.9 },
-    labelStyle: { fontSize: 11, fontWeight: 600, fill: n.risk_flag ? ROUGE : "#334155" },
-    labelBgStyle: { fill: "#fff", stroke: n.risk_flag ? "#fecaca" : "#e2e8f0" }, labelBgPadding: [6, 3], labelBgBorderRadius: 6
+// Structure du réseau (nœuds, relations) puis positions calculées par dagre, de gauche à droite dans le sens du paiement.
+// `signaleesSeules` : le filtre « Signalées » s'applique aussi aux réseaux déployés (on garde les nœuds déployés
+// eux-mêmes, sinon la chaîne serait coupée).
+function construire(entreprise, G, D, deployes, signaleesSeules) {
+  const noeuds = new Map();
+  const aretes = [];
+  const vues = new Set();
+  const ajouterArete = (src, tgt, n, base) => {
+    const cle = [src, tgt].sort().join("|");
+    if (vues.has(cle)) return;
+    vues.add(cle);
+    aretes.push({ id: `${base ? "e" : "d"}-${src}-${tgt}`, src, tgt, n, base });
   };
-};
+  [...G, ...D].forEach((n) => {
+    noeuds.set(n.id, { n, parent: "__centre" });
+    ajouterArete(n.sens === "entrant" ? n.id : "__centre", n.sens === "entrant" ? "__centre" : n.id, n, true);
+  });
+  for (const [pid, dep] of deployes) {
+    if (!noeuds.has(pid)) continue;
+    for (const brut of dep.noeuds) {
+      if (brut.id === entreprise.mf) continue; // l'entreprise étudiée est déjà au centre
+      if (signaleesSeules && !brut.risk_flag && !deployes.has(brut.id) && !noeuds.has(brut.id)) continue;
+      const n = { ...brut, montant: brut.montant_dt || 0, horsSelection: false, parentId: pid, parentNom: dep.nom };
+      if (!noeuds.has(n.id)) noeuds.set(n.id, { n, parent: pid });
+      const existant = noeuds.get(n.id).n;
+      ajouterArete(n.sens === "sortant" ? pid : n.id, n.sens === "sortant" ? n.id : pid, { ...n, risk_flag: existant.risk_flag || n.risk_flag }, false);
+    }
+  }
+  const hCentre = Math.max(110, 40 + Math.max(G.length, D.length) * 12);
+  const g = new dagre.graphlib.Graph();
+  g.setGraph({ rankdir: "LR", ranksep: 150, nodesep: 14, edgesep: 10, marginx: 16, marginy: 16 });
+  g.setDefaultEdgeLabel(() => ({}));
+  g.setNode("__centre", { width: L_CENTRE, height: hCentre });
+  for (const id of noeuds.keys()) g.setNode(id, { width: L_CARTE, height: H_CARTE });
+  for (const a of aretes) g.setEdge(a.src, a.tgt, { weight: a.base ? 3 : 1 });
+  dagre.layout(g);
+  const pos = new Map(g.nodes().map((id) => { const p = g.node(id); return [id, { x: p.x - p.width / 2, y: p.y - p.height / 2, cy: p.y }]; }));
+  return { noeuds, aretes, pos, hCentre };
+}
 
-// ---------------------------------------------------------------- panneau d'explication
+// ---------------------------------------------------------------- panneau d'explication (compact, en onglets)
+const RAISON = /^(.+?) \(\+(\d+) pts\) : (.+)$/;
+
+function Motif({ n }) {
+  const details = n.motif_detail?.details ?? [];
+  const raisons = details.filter((d) => RAISON.test(d)).map((d) => d.match(RAISON));
+  const action = details.find((d) => d.startsWith("Action suggérée"));
+  const puces = details.filter((d) => !RAISON.test(d) && !d.startsWith("Action suggérée"));
+  return (
+    <Stack gap={8}>
+      <Group gap={8} wrap="nowrap" align="flex-start">
+        <ThemeIcon color="red" variant="light" size={26} radius="md"><AlertTriangle size={14} /></ThemeIcon>
+        <Text size="sm" fw={700} c="red.8" lh={1.35}>{n.motif_detail?.titre ?? n.motif}</Text>
+      </Group>
+      {raisons.length > 0 && (
+        <Accordion variant="separated" radius="md" chevronPosition="right"
+          styles={{ control: { padding: "2px 10px" }, content: { padding: "0 10px 10px" }, label: { padding: "6px 0" }, item: { background: "var(--fond)" } }}>
+          {raisons.map(([, titre, points, texte]) => (
+            <Accordion.Item key={titre} value={titre}>
+              <Accordion.Control>
+                <Group justify="space-between" wrap="nowrap" gap={6}>
+                  <Text size="xs" fw={600} truncate>{titre}</Text>
+                  <Badge size="xs" variant="light" color="red" className="shrink-0">+{points} pts</Badge>
+                </Group>
+              </Accordion.Control>
+              <Accordion.Panel><Text size="xs" c="dimmed" lh={1.5}>{texte}</Text></Accordion.Panel>
+            </Accordion.Item>
+          ))}
+        </Accordion>
+      )}
+      {puces.length > 0 && (
+        <Stack gap={6}>
+          {puces.map((d, i) => (
+            <Group key={i} gap={8} wrap="nowrap" align="flex-start">
+              <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[#dc2626]" />
+              <Text size="xs" c="dimmed" lh={1.45}>{d}</Text>
+            </Group>
+          ))}
+        </Stack>
+      )}
+      {action && (
+        <Badge variant="light" color="ardoise" size="md" radius="sm" className="self-start" fw={500} styles={{ root: { textTransform: "none" } }}>
+          {action.replace("Action suggérée par Basira pour cette entreprise : ", "Action suggérée : ").replace(/\.$/, "")}
+        </Badge>
+      )}
+    </Stack>
+  );
+}
+
 function Explication({ n, entreprise, deploye, chargement, onFermer, onFiltrer, onDeployer }) {
   const navigate = useNavigate();
   const nom = n.parentNom ?? entreprise.company_name;
-  const phrase = n.sens === "sortant"
-    ? <><b>{nom}</b> a payé <b>{fmtDT(n.montant)}</b> à <b>{n.label}</b></>
-    : <><b>{n.label}</b> a payé <b>{fmtDT(n.montant)}</b> à <b>{nom}</b></>;
   const liees = (n.liees ?? (entreprise.liens_portefeuille ? entreprise.liens_portefeuille[n.id] ?? [] : entreprisesLiees(n.id, entreprise.mf)))
     .filter((o) => o.mf !== n.id);
-  const periode = n.parentId ? " sur 12 mois" : n.horsSelection ? " (cumul de la relation)" : " sur la période affichée";
+  const nbLiees = n.nb_liees ?? liees.length;
+  const couleur = n.risk_flag ? ROUGE : n.segment ? COULEURS_SEGMENT[n.segment] : "#64748b";
+  const payeur = n.sens === "sortant" ? nom : n.label, paye = n.sens === "sortant" ? n.label : nom;
   return (
-    <Paper withBorder p="md" radius="lg" className="!bg-white">
-      <Group justify="space-between" align="flex-start" wrap="nowrap" mb={6}>
-        <div className="min-w-0">
-          <Text fw={700} size="sm" lh={1.3}>{n.label}</Text>
-          <Text size="xs" c="dimmed">{n.type} · {n.relation}{n.parentId ? ` · réseau de ${n.parentNom}` : ""}</Text>
-        </div>
-        <CloseButton size="sm" onClick={onFermer} aria-label="Fermer l'explication" />
-      </Group>
-      <Stack gap={8}>
-        <Text size="sm" lh={1.45}>{phrase}{periode}.</Text>
-        <Text size="xs" c="dimmed">Source : {SOURCE_RELATION[n.relation] ?? "graphe des relations"}{n.depuis ? ` · relation depuis le ${fmtDate(n.depuis)}` : ""}{n.nouvelle ? " (nouvelle)" : ""}</Text>
-        {n.motif && (
-          <Alert color="red" variant="light" p="sm" icon={<AlertTriangle size={16} />} title={n.motif_detail?.titre ?? n.motif}>
-            {n.motif_detail?.details?.length > 0 && (
-              <List size="xs" spacing={6} mt={4} className="text-encre-2">
-                {n.motif_detail.details.map((d, i) => <List.Item key={i}>{d}</List.Item>)}
-              </List>
-            )}
-          </Alert>
-        )}
-        {liees.length > 0 && (
-          <div>
-            <Text size="xs" fw={600} c="dimmed" mb={4}>Aussi en relation avec {n.nb_liees ?? liees.length} entreprise{(n.nb_liees ?? liees.length) > 1 ? "s" : ""} du portefeuille :</Text>
-            <Group gap={4}>
-              {liees.map((o) => (
-                <Badge key={o.mf} variant="outline" color={COULEURS_SEGMENT[o.segment]} size="sm" className="cursor-pointer" maw={280}
-                  onClick={() => navigate(`/entreprise/${o.mf}`)} rightSection={<ArrowUpRight size={10} />}>{o.company_name}</Badge>
-              ))}
-            </Group>
-          </div>
-        )}
-        <Group gap={6} mt={4}>
-          {modeApi && (
-            <Button size="xs" color="violet" variant={deploye ? "outline" : "filled"} loading={chargement} leftSection={<GitBranchPlus size={13} />}
-              onClick={() => onDeployer(n)}>{deploye ? "Replier son réseau" : "Déployer son réseau"}</Button>
-          )}
-          {!n.parentId && <Button size="xs" variant="light" leftSection={<Filter size={13} />} onClick={() => onFiltrer(n.label)}>Filtrer les opérations</Button>}
-          {EST_MF.test(n.id) && <Button size="xs" variant="default" rightSection={<ArrowUpRight size={13} />} onClick={() => navigate(`/entreprise/${n.id}`)}>Ouvrir la fiche</Button>}
+    <Paper withBorder radius="lg" className="overflow-hidden !bg-white">
+      <div className="border-b border-bordure p-3" style={{ background: `linear-gradient(135deg, ${couleur}14, transparent 70%)` }}>
+        <Group justify="space-between" align="flex-start" wrap="nowrap">
+          <Group gap={10} wrap="nowrap" className="min-w-0">
+            <Avatar radius="md" size={38} style={{ background: `${couleur}1f`, color: couleur }} className="font-bold">{initiales(n.label)}</Avatar>
+            <div className="min-w-0">
+              <Text fw={700} size="sm" lh={1.25} lineClamp={2}>{n.label}</Text>
+              <Text size="xs" c="dimmed" truncate>{n.type}{n.parentId ? ` · via ${n.parentNom}` : ""}</Text>
+            </div>
+          </Group>
+          <CloseButton size="sm" onClick={onFermer} aria-label="Fermer l'explication" />
         </Group>
-        {modeApi && !deploye && (
-          <Text size="xs" c="dimmed">« Déployer » ajoute ses propres contreparties au graphe (signalées d'abord) pour remonter la chaîne.</Text>
-        )}
-      </Stack>
+        <Group gap={6} mt={10} wrap="wrap">
+          {modeApi && (
+            <Button size="compact-sm" color="violet" variant={deploye ? "light" : "filled"} loading={chargement}
+              leftSection={deploye ? <GitBranchMinus size={14} /> : <GitBranchPlus size={14} />} onClick={() => onDeployer(n)}>
+              {deploye ? "Replier" : "Déployer son réseau"}
+            </Button>
+          )}
+          {!n.parentId && (
+            <Tooltip label="Filtrer les opérations sur cette contrepartie">
+              <ActionIcon variant="default" size="md" onClick={() => onFiltrer(n.label)} aria-label="Filtrer les opérations"><Filter size={14} /></ActionIcon>
+            </Tooltip>
+          )}
+          {EST_MF.test(n.id) && (
+            <Tooltip label="Ouvrir la fiche">
+              <ActionIcon variant="default" size="md" onClick={() => navigate(`/entreprise/${n.id}`)} aria-label="Ouvrir la fiche"><ArrowUpRight size={14} /></ActionIcon>
+            </Tooltip>
+          )}
+        </Group>
+      </div>
+      <Tabs defaultValue={n.motif ? "pourquoi" : "relation"} key={n.id}>
+        <Tabs.List grow>
+          <Tabs.Tab value="pourquoi" leftSection={<Sparkles size={13} />} disabled={!n.motif}>Pourquoi</Tabs.Tab>
+          <Tabs.Tab value="relation" leftSection={<Scale size={13} />}>Relation</Tabs.Tab>
+          <Tabs.Tab value="liens" leftSection={<Link2 size={13} />} disabled={!liees.length}>Liens{nbLiees ? ` (${nbLiees})` : ""}</Tabs.Tab>
+        </Tabs.List>
+        <Tabs.Panel value="pourquoi" p="sm">{n.motif && <Motif n={n} />}</Tabs.Panel>
+        <Tabs.Panel value="relation" p="sm">
+          <Stack gap={10}>
+            <Group gap={8} wrap="nowrap" align="center" className="rounded-lg bg-fond p-2.5">
+              <Text size="xs" fw={600} className="min-w-0 flex-1 text-right" lineClamp={2}>{payeur}</Text>
+              <Stack gap={0} align="center" className="shrink-0">
+                <Text size="sm" fw={800} className="chiffres">{fmtCompact(n.montant)}</Text>
+                <ArrowRight size={16} color={n.risk_flag ? ROUGE : GRIS} />
+              </Stack>
+              <Text size="xs" fw={600} className="min-w-0 flex-1" lineClamp={2}>{paye}</Text>
+            </Group>
+            <Text size="xs" c="dimmed" lh={1.5}>
+              {n.relation} · {fmtDT(n.montant)} {n.parentId ? "sur 12 mois" : n.horsSelection ? "(cumul de la relation)" : "sur la période affichée"}.<br />
+              Source : {SOURCE_RELATION[n.relation] ?? "graphe des relations"}{n.depuis ? ` · depuis le ${fmtDate(n.depuis)}` : ""}{n.nouvelle ? " · relation nouvelle" : ""}.
+            </Text>
+          </Stack>
+        </Tabs.Panel>
+        <Tabs.Panel value="liens" p="sm">
+          <Text size="xs" c="dimmed" mb={6}>{nbLiees} entreprise{nbLiees > 1 ? "s" : ""} du portefeuille en relation avec {n.label}{liees.length < nbLiees ? ` (${liees.length} affichées)` : ""} :</Text>
+          <Stack gap={2}>
+            {liees.map((o) => (
+              <UnstyledButton key={o.mf} onClick={() => navigate(`/entreprise/${o.mf}`)} className="rounded-md px-2 py-1.5 hover:bg-fond-2">
+                <Group gap={8} wrap="nowrap">
+                  <span className="size-2 shrink-0 rounded-full" style={{ background: COULEURS_SEGMENT[o.segment] }} />
+                  <Text size="xs" fw={500} truncate className="flex-1">{o.company_name}</Text>
+                  <ArrowUpRight size={12} className="shrink-0 text-attenue" />
+                </Group>
+              </UnstyledButton>
+            ))}
+          </Stack>
+        </Tabs.Panel>
+      </Tabs>
     </Paper>
   );
 }
@@ -174,77 +284,85 @@ function Explication({ n, entreprise, deploye, chargement, onFermer, onFiltrer, 
 // ---------------------------------------------------------------- graphe
 function Graphe({ entreprise, montants, contrepartiesFiltrees, etat, plein, onFiltrer, onPleinEcran }) {
   const { tout, setTout, vue, setVue, choisi, setChoisi, deployes, deployer, chargement } = etat;
+  const [survol, setSurvol] = useState(null);
   const { fitView } = useReactFlow();
 
   const { gauche, droite } = useMemo(() => preparer(entreprise, montants), [entreprise, montants]);
-  const filtre = (l) => (vue === "signalees" ? l.filter((n) => n.risk_flag) : l);
+  const signaleesSeules = vue === "signalees";
+  // le filtre garde aussi les contreparties déployées (on ne coupe pas une chaîne que l'inspecteur suit)
+  const filtre = (l) => (signaleesSeules ? l.filter((n) => n.risk_flag || deployes.has(n.id)) : l);
   const G = regrouper(filtre(gauche), "gauche", tout.gauche);
   const D = regrouper(filtre(droite), "droite", tout.droite);
 
-  const lignes = Math.max(G.length, D.length, 1);
-  const hauteur = lignes * PAS;
-  const hCentre = Math.max(110, Math.min(hauteur - 20, 40 + Math.max(G.length, D.length) * 14));
-  const y = (i, n) => hauteur / 2 + (i - (n - 1) / 2) * PAS - H_CARTE / 2;
-  const max = Math.max(1, ...[...G, ...D].map((n) => n.montant));
-
-  const { nodes, edges, parId } = useMemo(() => {
-    const nodes = [{ id: "__centre", type: "entreprise", position: { x: X_CENTRE, y: hauteur / 2 - hCentre / 2 }, draggable: false,
-                     data: { e: entreprise, nG: G.length, nD: D.length, hauteur: hCentre } }];
-    const edges = [];
-    const parId = new Map();
-    const occupes = [];
-    const poser = (n, x, yy) => {
-      nodes.push({ id: n.id, type: "contrepartie", position: { x, y: yy }, draggable: false,
-                   data: { n, selectionnee: choisi === n.id || contrepartiesFiltrees.includes(n.label), deploye: deployes.has(n.id) } });
-      parId.set(n.id, { n, x, y: yy });
-      occupes.push([x, yy]);
-    };
-    G.forEach((n, i) => {
-      poser(n, 0, y(i, G.length));
-      edges.push(arete(`e-${n.id}`, n.id, "__centre", n, "sr", `g${i}`, max));
-    });
-    D.forEach((n, i) => {
-      poser(n, X_DROITE, y(i, D.length));
-      edges.push(arete(`e-${n.id}`, "__centre", n.id, n, `d${i}`, "tl", max));
-    });
-    // Réseaux déployés : une colonne de plus vers l'extérieur, sans chevaucher les cartes déjà posées
-    const libre = (x, yy) => !occupes.some(([ox, oy]) => Math.abs(ox - x) < L_CARTE && Math.abs(oy - yy) < H_CARTE + 8);
-    const vues = new Set(edges.map((e) => [e.source, e.target].sort().join("|")));
-    for (const [pid, dep] of deployes) {
-      const parent = parId.get(pid);
-      if (!parent) continue;
-      const vers = parent.x >= X_CENTRE ? 1 : -1;
-      const xc = parent.x + vers * DX_DEPLOIEMENT;
-      let k = 0;
-      for (const brut of dep.noeuds) {
-        if (brut.id === entreprise.mf) continue; // déjà au centre
-        const n = { ...brut, montant: brut.montant_dt || 0, horsSelection: false, parentId: pid, parentNom: dep.nom };
-        if (!parId.has(n.id)) {
-          let yy = parent.y, pas = 0;
-          while (!libre(xc, yy) && pas < 40) { pas += 1; yy = parent.y + (pas % 2 ? 1 : -1) * Math.ceil(pas / 2) * (H_CARTE + 12); }
-          poser(n, xc, yy);
-          k += 1;
-        }
-        const cible = parId.get(n.id);
-        const [src, tgt] = n.sens === "sortant" ? [pid, n.id] : [n.id, pid];
-        const cle = [src, tgt].sort().join("|");
-        if (vues.has(cle)) continue;
-        vues.add(cle);
-        const xs = (src === pid ? parent : cible).x, xt = (tgt === pid ? parent : cible).x;
-        edges.push(arete(`d-${pid}-${n.id}`, src, tgt, n, xs <= xt ? "sr" : "sl", xs <= xt ? "tl" : "tr", max));
-      }
-    }
-    return { nodes, edges, parId };
+  // 1. structure et positions (recalculées seulement si le réseau change)
+  const plan = useMemo(() => construire(entreprise, G, D, deployes, signaleesSeules),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entreprise, G.length, D.length, montants, choisi, contrepartiesFiltrees, vue, tout, deployes]);
+    [entreprise, montants, vue, tout, deployes, G.length, D.length]);
+  const max = Math.max(1, ...plan.aretes.map((a) => a.n.montant || 0));
 
-  useEffect(() => { const t = setTimeout(() => fitView({ padding: 0.08, duration: 250 }), 40); return () => clearTimeout(t); }, [nodes.length, fitView, plein]);
+  // 2. focus : nœud survolé ou choisi, ses voisins, et la chaîne qui le relie à l'entreprise étudiée
+  const focus = survol ?? choisi;
+  const { enFocus, chaine } = useMemo(() => {
+    if (!focus || !plan.noeuds.has(focus)) return { enFocus: null, chaine: new Set() };
+    const enFocus = new Set([focus, "__centre"]);
+    plan.aretes.forEach((a) => { if (a.src === focus || a.tgt === focus) { enFocus.add(a.src); enFocus.add(a.tgt); } });
+    const chaine = new Set();
+    let id = focus;
+    while (id && id !== "__centre") {
+      const parent = plan.noeuds.get(id)?.parent;
+      if (!parent) break;
+      chaine.add([id, parent].sort().join("|"));
+      enFocus.add(parent);
+      id = parent;
+    }
+    return { enFocus, chaine };
+  }, [focus, plan]);
 
-  const noeudChoisi = parId.get(choisi)?.n ?? [...gauche, ...droite].find((n) => n.id === choisi);
+  // 3. rendu React Flow
+  const { nodes, edges } = useMemo(() => {
+    const { noeuds, aretes, pos, hCentre } = plan;
+    const versCentre = aretes.filter((a) => a.tgt === "__centre").sort((a, b) => pos.get(a.src).cy - pos.get(b.src).cy);
+    const duCentre = aretes.filter((a) => a.src === "__centre").sort((a, b) => pos.get(a.tgt).cy - pos.get(b.tgt).cy);
+    const poignee = new Map([...versCentre.map((a, i) => [a.id, `g${i}`]), ...duCentre.map((a, i) => [a.id, `d${i}`])]);
+    const nodes = [{ id: "__centre", type: "entreprise", position: pos.get("__centre"), draggable: false,
+                     data: { e: entreprise, nG: versCentre.length, nD: duCentre.length, hauteur: hCentre } }];
+    for (const [id, { n }] of noeuds) {
+      nodes.push({ id, type: "contrepartie", position: pos.get(id), draggable: false,
+                   data: { n, selectionnee: choisi === id || contrepartiesFiltrees.includes(n.label), deploye: deployes.has(id), estompe: !!enFocus && !enFocus.has(id) } });
+    }
+    const grand = deployes.size > 0 || aretes.length > 16;
+    const edges = aretes.map((a) => {
+      const n = a.n;
+      const cle = [a.src, a.tgt].sort().join("|");
+      const dansFocus = enFocus ? (a.src === focus || a.tgt === focus || chaine.has(cle)) : null;
+      const couleur = n.risk_flag ? ROUGE : GRIS;
+      const xs = pos.get(a.src).x, xt = pos.get(a.tgt).x;
+      const sourceHandle = a.src === "__centre" ? poignee.get(a.id) : xs <= xt ? "sr" : "sl";
+      const targetHandle = a.tgt === "__centre" ? poignee.get(a.id) : xs <= xt ? "tl" : "tr";
+      const libelle = `${COURT[n.relation] ?? n.relation}${n.montant ? ` · ${fmtCompact(n.montant)}` : ""}`;
+      return {
+        id: a.id, source: a.src, target: a.tgt, sourceHandle, targetHandle,
+        label: dansFocus || (!enFocus && !grand) ? libelle : undefined,
+        animated: !!(dansFocus && chaine.has(cle)),
+        markerEnd: { type: MarkerType.ArrowClosed, color: couleur, width: 15, height: 15 },
+        style: { stroke: couleur, strokeWidth: (1.3 + 3.4 * Math.sqrt(Math.min(1, (n.montant || 0) / max))) * (dansFocus ? 1.25 : 1),
+                 strokeDasharray: n.nouvelle && !chaine.has(cle) ? "6 4" : undefined,
+                 opacity: enFocus ? (dansFocus ? 1 : 0.06) : n.horsSelection && !n.agregat ? 0.45 : grand ? 0.55 : 0.9,
+                 transition: "opacity .2s" },
+        labelStyle: { fontSize: 11, fontWeight: 600, fill: n.risk_flag ? ROUGE : "#334155" },
+        labelBgStyle: { fill: "#fff", stroke: n.risk_flag ? "#fecaca" : "#e2e8f0" }, labelBgPadding: [6, 3], labelBgBorderRadius: 6
+      };
+    });
+    return { nodes, edges };
+  }, [plan, choisi, contrepartiesFiltrees, deployes, enFocus, chaine, focus, max, entreprise]);
+
+  useEffect(() => { const t = setTimeout(() => fitView({ padding: 0.06, duration: 300 }), 40); return () => clearTimeout(t); }, [plan, fitView, plein]);
+
+  const noeudChoisi = plan.noeuds.get(choisi)?.n ?? [...gauche, ...droite].find((n) => n.id === choisi);
   const tousNoeuds = [...gauche, ...droite];
-  const tousSignales = [...parId.values()].map((p) => p.n).filter((n) => n.risk_flag).sort((a, b) => b.montant - a.montant);
+  const tousSignales = [...plan.noeuds.values()].map((p) => p.n).filter((n) => n.risk_flag).sort((a, b) => b.montant - a.montant);
   const clic = (_, nd) => {
-    if (nd.id === "__centre") return;
+    if (nd.id === "__centre") { setChoisi(null); return; }
     const n = nd.data.n;
     if (n.agregat) setTout((t) => ({ ...t, [n.sens === "entrant" ? "gauche" : "droite"]: true }));
     else setChoisi((c) => (c === n.id ? null : n.id));
@@ -253,7 +371,8 @@ function Graphe({ entreprise, montants, contrepartiesFiltrees, etat, plein, onFi
   const somme = (l) => l.reduce((s, n) => s + n.montant, 0);
   const signalees = droite.filter((n) => n.risk_flag);
   const r = entreprise.reseau_resume;
-  const hauteurCanvas = plein ? "calc(100vh - 150px)" : Math.min(620, Math.max(420, lignes * 66 + 40));
+  const lignes = Math.max(G.length, D.length, 1);
+  const hauteurCanvas = plein ? "calc(100vh - 150px)" : Math.min(640, Math.max(440, lignes * 66 + 60));
   if (!tousNoeuds.length) return <Text c="dimmed" size="sm" ta="center" py="xl">Aucune contrepartie sur la période.</Text>;
 
   return (
@@ -276,36 +395,41 @@ function Graphe({ entreprise, montants, contrepartiesFiltrees, etat, plein, onFi
         </Group>
       </Group>
 
-      <div className={`grid gap-3 ${plein ? "grid-cols-[minmax(0,1fr)_400px]" : "@4xl:grid-cols-[minmax(0,1fr)_340px]"}`}>
-        <div style={{ height: hauteurCanvas }} className="relative overflow-hidden rounded-lg border border-bordure bg-fond">
-          <ReactFlow nodes={nodes} edges={edges} nodeTypes={TYPES_NOEUDS} onNodeClick={clic} fitView fitViewOptions={{ padding: 0.08 }}
-            nodesDraggable={false} nodesConnectable={false} elementsSelectable={false} zoomOnScroll={plein} zoomOnDoubleClick={false}
-            preventScrolling={plein} minZoom={0.2} maxZoom={1.8} proOptions={{ hideAttribution: true }}>
-            <Background gap={18} size={1} color="#e2e8f0" />
+      <div className={`grid gap-3 ${plein ? "grid-cols-[minmax(0,1fr)_380px]" : "@4xl:grid-cols-[minmax(0,1fr)_330px]"}`}>
+        <div style={{ height: hauteurCanvas }} className="relative overflow-hidden rounded-xl border border-bordure bg-[radial-gradient(circle_at_50%_40%,#ffffff,#f1f5f9)]">
+          <ReactFlow nodes={nodes} edges={edges} nodeTypes={TYPES_NOEUDS} onNodeClick={clic} onPaneClick={() => setChoisi(null)}
+            onNodeMouseEnter={(_, nd) => nd.id !== "__centre" && setSurvol(nd.id)} onNodeMouseLeave={() => setSurvol(null)}
+            fitView fitViewOptions={{ padding: 0.06 }} nodesDraggable={false} nodesConnectable={false} elementsSelectable={false}
+            zoomOnScroll={plein} zoomOnDoubleClick={false} preventScrolling={plein} minZoom={0.15} maxZoom={1.8} proOptions={{ hideAttribution: true }}>
+            <Background gap={20} size={1} color="#dbe2ea" />
             <Controls showInteractive={false} position="bottom-right" />
-            <Panel position="top-left"><Text size="xs" fw={700} c="dimmed" tt="uppercase" lts="0.05em">Paient l'entreprise</Text></Panel>
-            <Panel position="top-right"><Text size="xs" fw={700} c="dimmed" tt="uppercase" lts="0.05em">Payés par l'entreprise</Text></Panel>
+            <Panel position="top-left"><Badge variant="white" color="ardoise" size="sm" leftSection={<ArrowRight size={11} />} styles={{ root: { textTransform: "none" } }}>payeurs à gauche · payés à droite</Badge></Panel>
+            {deployes.size > 0 && !focus && (
+              <Panel position="bottom-center"><Badge variant="light" color="violet" size="sm" styles={{ root: { textTransform: "none" } }}>Survolez un nœud pour isoler ses relations</Badge></Panel>
+            )}
           </ReactFlow>
         </div>
 
         {/* Colonne d'explication : hors du canevas, jamais rognée */}
-        <ScrollArea.Autosize mah={plein ? "calc(100vh - 150px)" : Math.max(Number(hauteurCanvas) || 420, 460)} type="auto" offsetScrollbars>
+        <ScrollArea.Autosize mah={plein ? "calc(100vh - 150px)" : Math.max(Number(hauteurCanvas) || 440, 460)} type="auto" offsetScrollbars>
           {noeudChoisi ? (
             <Explication n={noeudChoisi} entreprise={entreprise} deploye={deployes.has(noeudChoisi.id)} chargement={chargement === noeudChoisi.id}
               onFermer={() => setChoisi(null)} onFiltrer={onFiltrer} onDeployer={deployer} />
           ) : (
             <Paper withBorder p="md" radius="lg" className="!bg-white">
-              <Text fw={700} size="sm" mb={4}>{tousSignales.length ? `${tousSignales.length} contrepartie${tousSignales.length > 1 ? "s" : ""} signalée${tousSignales.length > 1 ? "s" : ""}` : "Aucune contrepartie signalée"}</Text>
-              <Text size="xs" c="dimmed" mb="sm">Cliquez une contrepartie, ici ou dans le graphe, pour voir la relation, le détail du motif et déployer son réseau.</Text>
+              <Group gap={8} mb={4}><ThemeIcon size={24} radius="md" variant="light" color="red"><AlertTriangle size={13} /></ThemeIcon>
+                <Text fw={700} size="sm">{tousSignales.length ? `${tousSignales.length} contrepartie${tousSignales.length > 1 ? "s" : ""} signalée${tousSignales.length > 1 ? "s" : ""}` : "Aucune contrepartie signalée"}</Text></Group>
+              <Text size="xs" c="dimmed" mb="sm">Choisissez-en une pour lire le motif et déployer son réseau.</Text>
               <Stack gap={6}>
                 {tousSignales.map((n) => (
-                  <UnstyledButton key={n.id} onClick={() => setChoisi(n.id)} className="rounded-md border border-[#fecaca] bg-[#fff5f5] px-3 py-2 hover:border-[#dc2626]">
+                  <UnstyledButton key={n.id} onClick={() => setChoisi(n.id)} onMouseEnter={() => setSurvol(n.id)} onMouseLeave={() => setSurvol(null)}
+                    className="rounded-lg border border-[#fecaca] bg-[#fff7f7] px-3 py-2 transition-colors hover:border-[#dc2626]">
                     <Group gap={6} wrap="nowrap" justify="space-between">
                       <Text size="sm" fw={600} truncate>{n.label}</Text>
                       <Text size="xs" fw={700} className="chiffres shrink-0">{fmtCompact(n.montant)}</Text>
                     </Group>
-                    <Text size="xs" c="red.8" lh={1.35} mt={2}>{n.motif_detail?.titre ?? n.motif}</Text>
-                    {n.parentNom && <Text size="xs" c="violet.7" mt={2}>via {n.parentNom}</Text>}
+                    <Text size="xs" c="red.8" lh={1.35} mt={2} lineClamp={1}>{n.motif_detail?.titre ?? n.motif}</Text>
+                    {n.parentNom && <Text size="xs" c="violet.7" mt={2} truncate>via {n.parentNom}</Text>}
                   </UnstyledButton>
                 ))}
               </Stack>
@@ -380,7 +504,8 @@ export default function GrapheReseau({ entreprise, montants, contrepartiesFiltre
       ) : (
         <ReactFlowProvider><Graphe {...props} plein={false} onPleinEcran={() => setPlein(true)} /></ReactFlowProvider>
       )}
-      <Modal opened={plein} onClose={() => setPlein(false)} fullScreen title={<Text fw={700}>Réseau de contreparties · {entreprise.company_name}</Text>}
+      <Modal opened={plein} onClose={() => setPlein(false)} fullScreen
+        title={<Group gap={8}><ThemeIcon variant="light" size={28} radius="md"><Network size={15} /></ThemeIcon><Text fw={700}>Réseau de contreparties · {entreprise.company_name}</Text></Group>}
         transitionProps={{ transition: "fade", duration: 150 }}>
         {plein && <ReactFlowProvider><Graphe {...props} plein onPleinEcran={() => setPlein(false)} /></ReactFlowProvider>}
       </Modal>
