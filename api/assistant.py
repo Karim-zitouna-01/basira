@@ -35,6 +35,8 @@ Règles impératives :
    pour les éléments clés ; pas de titres.
 7. Pour le réseau, respecte exactement le sens des relations décrit dans le champ « relations » (qui paie qui, qui est client).
 8. Si l'inspecteur demande une lettre, appelle rediger_lettre_demande_info et recopie la lettre intégralement, sans la résumer.
+9. Le score est sur 100 (jamais en DT). Pour son évolution, nomme le mois de départ et le mois d'arrivée et prends les deux
+   scores dans la même « trajectoire » (ex. « de 46 en juin 2026 à 84 en août 2026 ») ; ne mélange pas deux périodes.
 """
 
 PROMPT_LISTE = """Tu es l'assistant de Basira, un outil d'aide au contrôle fiscal de l'administration tunisienne.

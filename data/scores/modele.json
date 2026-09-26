@@ -1,0 +1,95 @@
+{
+  "intercept": -2.944439,
+  "poids": {
+    "COH_IMPORT_VS_CA": 2.643536,
+    "COH_CLIENTS_VS_CA": 1.072805,
+    "COH_ADEB_VS_CA": 1.072805,
+    "COH_TVA_IMPORT": 1.072805,
+    "COH_VALEUR_REF": 1.570982,
+    "CHG_CA": 1.072805,
+    "CHG_IMPORTS": 1.072805,
+    "CHG_TVA_DEDUCTIBLE": 0.320614,
+    "CHG_NOUVEAUX_FOURNISSEURS": 0.599265,
+    "CHG_NOUVELLES_CATEGORIES": 1.072805,
+    "CHG_DEPOTS": 1.072805,
+    "PAI_MARGE": 1.869177,
+    "PAI_MAHALANOBIS": 1.44921,
+    "RES_FOURNISSEUR_PARTAGE": 0.522917,
+    "RES_COQUILLE": 1.072805,
+    "RES_PROXIMITE_REDRESSE": 1.072805,
+    "CMB_IMPORT_X_NOUV_FOURN": 0.223323,
+    "CMB_COQUILLE_X_TVA": 1.072805
+  },
+  "date_entrainement": "2026-09-26",
+  "nb_exemples": 276,
+  "nb_positifs": 87,
+  "definition_cible": "REDRESSEMENT_MINEUR ou FRAUDE_SIGNIFICATIVE (poids 2)",
+  "methode": "Régression logistique L2 (scikit-learn), class_weight équilibré, poids contraints ≥ 0 (retrait itératif), poids a priori (médiane des poids appris) pour les signaux jamais observés ou à coefficient négatif (biais de sélection des contrôles passés), puis calibrage de l'échelle par la capacité (1 % des couples entreprise × mois ≥ 70) ; plancher 70 si une preuve de cohérence est forte (score.py)",
+  "signaux_exclus": [
+    {
+      "code_signal": "COH_CLIENTS_VS_CA",
+      "raison": "jamais observé dans les contrôles passés ; poids a priori 0.534 (médiane des poids appris)"
+    },
+    {
+      "code_signal": "CHG_NOUVELLES_CATEGORIES",
+      "raison": "jamais observé dans les contrôles passés ; poids a priori 0.534 (médiane des poids appris)"
+    },
+    {
+      "code_signal": "RES_COQUILLE",
+      "raison": "jamais observé dans les contrôles passés ; poids a priori 0.534 (médiane des poids appris)"
+    },
+    {
+      "code_signal": "CMB_COQUILLE_X_TVA",
+      "raison": "jamais observé dans les contrôles passés ; poids a priori 0.534 (médiane des poids appris)"
+    },
+    {
+      "code_signal": "COH_ADEB_VS_CA",
+      "raison": "coefficient négatif (-0.043) : retiré puis réentraînement ; poids a priori 0.534 (médiane des poids appris)"
+    },
+    {
+      "code_signal": "COH_TVA_IMPORT",
+      "raison": "coefficient négatif (-0.075) : retiré puis réentraînement ; poids a priori 0.534 (médiane des poids appris)"
+    },
+    {
+      "code_signal": "CHG_CA",
+      "raison": "coefficient négatif (-0.296) : retiré puis réentraînement ; poids a priori 0.534 (médiane des poids appris)"
+    },
+    {
+      "code_signal": "CHG_IMPORTS",
+      "raison": "coefficient négatif (-0.080) : retiré puis réentraînement ; poids a priori 0.534 (médiane des poids appris)"
+    },
+    {
+      "code_signal": "CHG_DEPOTS",
+      "raison": "coefficient négatif (-0.457) : retiré puis réentraînement ; poids a priori 0.534 (médiane des poids appris)"
+    }
+  ],
+  "calibrage": {
+    "intercept": -2.9444389791664403,
+    "facteur_echelle": 2.010285,
+    "ancre_base": 5.0,
+    "ancre_capacite": 70.0,
+    "capacite": 0.01,
+    "gain_quantile_capacite": 1.886169,
+    "intercept_appris": -0.316073,
+    "poids_appris": {
+      "COH_IMPORT_VS_CA": 1.315006,
+      "COH_CLIENTS_VS_CA": 0.533658,
+      "COH_ADEB_VS_CA": 0.533658,
+      "COH_TVA_IMPORT": 0.533658,
+      "COH_VALEUR_REF": 0.781472,
+      "CHG_CA": 0.533658,
+      "CHG_IMPORTS": 0.533658,
+      "CHG_TVA_DEDUCTIBLE": 0.159487,
+      "CHG_NOUVEAUX_FOURNISSEURS": 0.2981,
+      "CHG_NOUVELLES_CATEGORIES": 0.533658,
+      "CHG_DEPOTS": 0.533658,
+      "PAI_MARGE": 0.929807,
+      "PAI_MAHALANOBIS": 0.720898,
+      "RES_FOURNISSEUR_PARTAGE": 0.260121,
+      "RES_COQUILLE": 0.533658,
+      "RES_PROXIMITE_REDRESSE": 0.533658,
+      "CMB_IMPORT_X_NOUV_FOURN": 0.11109,
+      "CMB_COQUILLE_X_TVA": 0.533658
+    }
+  }
+}

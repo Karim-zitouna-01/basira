@@ -13,7 +13,10 @@ wheels/
 data/raw/
 data/graphe/
 data/signaux/
-data/scores/
+data/scores/*
+!data/scores/modele.json
+!data/scores/evaluation.json
+!data/scores/simulation_boucle.json
 data/dev/
 
 # Artefacts de A/B

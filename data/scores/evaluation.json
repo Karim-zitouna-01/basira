@@ -1,0 +1,95 @@
+{
+  "top_n": 50,
+  "periode_test": "2025-09 → 2026-08",
+  "methodes": [
+    {
+      "nom": "Basira",
+      "taux_detection_top_n": 0.87,
+      "montant_moyen_par_controle": 1512869.206,
+      "fausses_alertes_croissance_legitime": 3.2,
+      "avance_detection_mois": 0.1
+    },
+    {
+      "nom": "Règle statique (type SAR)",
+      "taux_detection_top_n": 0.232,
+      "montant_moyen_par_controle": 483981.955,
+      "fausses_alertes_croissance_legitime": 18.1,
+      "avance_detection_mois": 0.0
+    },
+    {
+      "nom": "Sélection aléatoire",
+      "taux_detection_top_n": 0.05,
+      "montant_moyen_par_controle": 30873.072,
+      "fausses_alertes_croissance_legitime": 1.0,
+      "avance_detection_mois": null
+    }
+  ],
+  "note": "Chiffres calculés sur données synthétiques ; vérité terrain cachée au modèle.",
+  "details": {
+    "Basira": {
+      "entreprises_frauduleuses_detectees": 86,
+      "sur": 299,
+      "delai_moyen_detection_mois": 4.5
+    },
+    "Règle statique (type SAR)": {
+      "entreprises_frauduleuses_detectees": 31,
+      "sur": 299,
+      "delai_moyen_detection_mois": 4.5
+    },
+    "avance_calculee_sur": 24,
+    "definition": "Moyennes mensuelles sur la période de test ; fausses alertes = entreprises à croissance légitime dans le top N (moyenne par mois) ; avance = délai de la règle statique − délai de Basira, sur les fraudes détectées par les deux méthodes."
+  },
+  "validation_modele": {
+    "auc_validation_croisee_poids_appris": 0.626,
+    "auc_validation_croisee_poids_egaux": 0.618,
+    "nb_controles": 276,
+    "detection_top_n_modele_sans_controles_periode_test": 0.867,
+    "nb_controles_avant_periode_test": 164,
+    "detection_top_n_poids_egaux": 0.875,
+    "prioritaires_mois_courant": 208,
+    "precision_prioritaires_mois_courant": 0.726,
+    "part_prioritaire_par_scenario": {
+      "A": {
+        "nb": 80,
+        "part": 0.55
+      },
+      "AUCUN": {
+        "nb": 4451,
+        "part": 0.01
+      },
+      "B": {
+        "nb": 51,
+        "part": 0.667
+      },
+      "C": {
+        "nb": 50,
+        "part": 0.7
+      },
+      "CITOYEN_MODELE": {
+        "nb": 400,
+        "part": 0.01
+      },
+      "COQUILLE": {
+        "nb": 13,
+        "part": 0.846
+      },
+      "CROISSANCE_LEGITIME": {
+        "nb": 100,
+        "part": 0.09
+      },
+      "D": {
+        "nb": 30,
+        "part": 0.667
+      },
+      "E": {
+        "nb": 25,
+        "part": 0.12
+      },
+      "F": {
+        "nb": 50,
+        "part": 0.08
+      }
+    },
+    "definition": "AUC : contrôles passés, validation croisée à 5 plis (0,5 = hasard). Détection : même définition que le top N principal (priorité = score × enjeu). Précision : part de fraudes actives parmi les PRIORITAIRE."
+  }
+}
