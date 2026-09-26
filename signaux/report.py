@@ -153,6 +153,15 @@ def generate_report(data_dir, output, stack_path, final=False):
         "Si une réponse contient un chiffre absent des données, elle est bloquée et remplacée par une réponse préparée à l'avance. "
         "L'assistant ne prend aucune décision."
     )
+    paragraph(
+        "<b>Souveraineté.</b> Lors de la table ronde douane et fiscalité, l'administration a rappelé qu'elle ne peut pas utiliser "
+        "d'IA générative publique : les serveurs, les modèles et les données doivent rester au sein de l'institution. Basira est "
+        "conçu sur ce principe. Le modèle de langage Qwen est un modèle à poids ouverts, téléchargé une fois puis exécuté sur une "
+        "machine locale, sans aucun appel à un service en ligne ni à un fournisseur étranger. Le score de risque est calculé par un "
+        "modèle entraîné par l'équipe, que l'administration peut réentraîner sur place avec ses propres contrôles. L'ensemble repose "
+        "sur des logiciels libres et fonctionne hors connexion : pendant le hackathon, l'assistant tournait sur un ordinateur de "
+        "l'équipe, relié par un simple réseau local."
+    )
     k = boucle.get("decisions_ajoutees") if boucle else None
     paragraph(
         "<b>Le prototype</b> est une application web : liste des entreprises classées par priorité, fiche de chaque entreprise avec "
@@ -238,8 +247,9 @@ def generate_report(data_dir, output, stack_path, final=False):
     paragraph(
         "Relier Basira aux systèmes réels, notamment le lac de données SADEC 2 et SINDA, en conservant la date à laquelle chaque "
         "information devient disponible. Unifier les identifiants et le référentiel des activités entre administrations. Valider les "
-        "indicateurs et l'estimation des montants avec les inspecteurs. Héberger les données et l'assistant au sein de "
-        "l'administration, avec une gestion des droits d'accès et la traçabilité des consultations. Avant tout usage de données "
+        "indicateurs et l'estimation des montants avec les inspecteurs. Héberger les données, le modèle de langage et l'application "
+        "sur les serveurs de l'administration, dans le cadre de la stratégie nationale d'IA et sans dépendre d'aucun service "
+        "extérieur, avec une gestion des droits d'accès et la traçabilité des consultations. Avant tout usage de données "
         "réelles, réaliser une analyse d'impact et accomplir les formalités auprès de l'INPDP (loi organique n° 2004-63). Enfin, "
         "réentraîner régulièrement le modèle avec les résultats réels des contrôles, surveiller les écarts de traitement selon le "
         "secteur, la taille et la région, et garder la décision humaine."
