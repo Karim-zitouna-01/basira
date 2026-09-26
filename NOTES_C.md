@@ -37,3 +37,8 @@
 - **Copilote** : la page liste répondait par un calcul local, pas par le LLM. Désormais les deux pages passent par
   `POST /api/assistant` (`mf` optionnel, `contexte` = données de l'écran). Réponse de repli → champ `raison_repli` affiché.
   Qwen mesuré à 3–19 s par réponse ; délai porté à 45 s.
+- **Copilote × graphe** (2026-09-26) : 2 outils de réseau (`get_liens_contrepartie`, `get_chemin_redresse`) et la route
+  `POST /api/assistant/flux` (text/event-stream : `etape`, `graphe`, `reponse`). Les actions sur le graphe sont calculées par l'API
+  à partir des relations déclarées (jamais par le modèle). Une contrepartie nommée ou une question de lien avec une entreprise
+  redressée déclenche l'outil d'office (`outils_evidents`) : sans cela, Qwen répondait parfois sans outil et inventait des chiffres
+  (bloqués par le garde-fou). Champ `graphe` ajouté aux réponses de `/api/assistant`.

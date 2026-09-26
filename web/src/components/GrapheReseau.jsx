@@ -5,7 +5,7 @@
 //   animée dans le sens du paiement. Les montants ne s'affichent que sur les relations en focus quand le réseau est grand.
 // - Filtre « Signalées » appliqué à tout le réseau, y compris les réseaux déployés.
 // - Panneau d'explication compact en onglets (Pourquoi · Relation · Liens), motifs dépliables un par un.
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import dagre from "@dagrejs/dagre";
 import { Background, Controls, Handle, MarkerType, Panel, Position, ReactFlow, ReactFlowProvider, useReactFlow } from "@xyflow/react";
@@ -14,6 +14,7 @@ import {
   Stack, Tabs, Text, ThemeIcon, Tooltip, UnstyledButton
 } from "@mantine/core";
 import { AlertTriangle, ArrowRight, ArrowUpRight, Filter, GitBranchPlus, GitBranchMinus, History, Link2, Maximize2, Minimize2, Network, Scale, Sparkles } from "lucide-react";
+import { useActionsGraphe } from "../lib/copiloteGraphe.js";
 import { chargerVoisins, entreprisesLiees, modeApi } from "../lib/donnees.js";
 import { SEGMENTS } from "../lib/palettes.js";
 import { COULEURS_SEGMENT } from "../lib/theme.js";
@@ -113,7 +114,7 @@ function regrouper(liste, cote, tout) {
 // Structure du réseau (nœuds, relations) puis positions calculées par dagre, de gauche à droite dans le sens du paiement.
 // `signaleesSeules` : le filtre « Signalées » s'applique aussi aux réseaux déployés (on garde les nœuds déployés
 // eux-mêmes, sinon la chaîne serait coupée).
-function construire(entreprise, G, D, deployes, signaleesSeules) {
+function construire(entreprise, G, D, deployes, signaleesSeules, tous) {
   const noeuds = new Map();
   const aretes = [];
   const vues = new Set();
@@ -127,13 +128,27 @@ function construire(entreprise, G, D, deployes, signaleesSeules) {
     noeuds.set(n.id, { n, parent: "__centre" });
     ajouterArete(n.sens === "entrant" ? n.id : "__centre", n.sens === "entrant" ? "__centre" : n.id, n, true);
   });
-  for (const [pid, dep] of deployes) {
-    if (!noeuds.has(pid)) continue;
+  // une contrepartie déployée mais regroupée dans « + N autres » (ou masquée par le filtre) reste dessinée
+  for (const pid of deployes.keys()) {
+    const n = pid !== "__centre" && !noeuds.has(pid) && tous.find((x) => x.id === pid);
+    if (!n) continue;
+    noeuds.set(pid, { n, parent: "__centre" });
+    ajouterArete(n.sens === "entrant" ? pid : "__centre", n.sens === "entrant" ? "__centre" : pid, n, true);
+  }
+  // « __centre » : contreparties ajoutées par le copilote hors des 40 dessinées d'office ; traitées en premier
+  const ordre = [...deployes].sort(([a], [b]) => (b === "__centre") - (a === "__centre"));
+  for (const [pid, dep] of ordre) {
+    const auCentre = pid === "__centre";
+    if (!auCentre && !noeuds.has(pid)) continue;
     for (const brut of dep.noeuds) {
       if (brut.id === entreprise.mf) continue; // l'entreprise étudiée est déjà au centre
       if (signaleesSeules && !brut.risk_flag && !deployes.has(brut.id) && !noeuds.has(brut.id)) continue;
-      const n = { ...brut, montant: brut.montant_dt || 0, horsSelection: false, parentId: pid, parentNom: dep.nom };
+      const n = { ...brut, montant: brut.montant_dt || 0, horsSelection: false, parentId: auCentre ? undefined : pid, parentNom: auCentre ? undefined : dep.nom };
       if (!noeuds.has(n.id)) noeuds.set(n.id, { n, parent: pid });
+      else if (brut.motif_detail && !noeuds.get(n.id).n.motif_detail) {
+        const p = noeuds.get(n.id); // motif apporté par le copilote (ex. entreprise redressée au bout d'un chemin)
+        p.n = { ...p.n, motif: brut.motif, motif_detail: brut.motif_detail, risk_flag: true };
+      }
       const existant = noeuds.get(n.id).n;
       ajouterArete(n.sens === "sortant" ? pid : n.id, n.sens === "sortant" ? n.id : pid, { ...n, risk_flag: existant.risk_flag || n.risk_flag }, false);
     }
@@ -211,7 +226,7 @@ function Explication({ n, entreprise, deploye, chargement, onFermer, onFiltrer, 
     <Paper withBorder radius="lg" className="overflow-hidden !bg-white">
       <div className="border-b border-bordure p-3" style={{ background: `linear-gradient(135deg, ${couleur}14, transparent 70%)` }}>
         <Group justify="space-between" align="flex-start" wrap="nowrap">
-          <Group gap={10} wrap="nowrap" className="min-w-0">
+          <Group gap={10} wrap="nowrap" className="min-w-0 flex-1">
             <Avatar radius="md" size={38} style={{ background: `${couleur}1f`, color: couleur }} className="font-bold">{initiales(n.label)}</Avatar>
             <div className="min-w-0">
               <Text fw={700} size="sm" lh={1.25} lineClamp={2}>{n.label}</Text>
@@ -239,7 +254,8 @@ function Explication({ n, entreprise, deploye, chargement, onFermer, onFiltrer, 
           )}
         </Group>
       </div>
-      <Tabs defaultValue={n.motif ? "pourquoi" : "relation"} key={n.id}>
+      <Tabs defaultValue={n.motif ? "pourquoi" : "relation"} key={n.id}
+        styles={{ tab: { paddingInline: 6, fontSize: 12.5 }, tabSection: { marginInlineEnd: 4 } }}>
         <Tabs.List grow>
           <Tabs.Tab value="pourquoi" leftSection={<Sparkles size={13} />} disabled={!n.motif}>Pourquoi</Tabs.Tab>
           <Tabs.Tab value="relation" leftSection={<Scale size={13} />}>Relation</Tabs.Tab>
@@ -283,7 +299,7 @@ function Explication({ n, entreprise, deploye, chargement, onFermer, onFiltrer, 
 
 // ---------------------------------------------------------------- graphe
 function Graphe({ entreprise, montants, contrepartiesFiltrees, etat, plein, onFiltrer, onPleinEcran }) {
-  const { tout, setTout, vue, setVue, choisi, setChoisi, deployes, deployer, chargement } = etat;
+  const { tout, setTout, vue, setVue, choisi, setChoisi, deployes, deployer, chargement, copilote, setCopilote } = etat;
   const [survol, setSurvol] = useState(null);
   const { fitView } = useReactFlow();
 
@@ -295,7 +311,7 @@ function Graphe({ entreprise, montants, contrepartiesFiltrees, etat, plein, onFi
   const D = regrouper(filtre(droite), "droite", tout.droite);
 
   // 1. structure et positions (recalculées seulement si le réseau change)
-  const plan = useMemo(() => construire(entreprise, G, D, deployes, signaleesSeules),
+  const plan = useMemo(() => construire(entreprise, G, D, deployes, signaleesSeules, [...gauche, ...droite]),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [entreprise, montants, vue, tout, deployes, G.length, D.length]);
   const max = Math.max(1, ...plan.aretes.map((a) => a.n.montant || 0));
@@ -369,6 +385,7 @@ function Graphe({ entreprise, montants, contrepartiesFiltrees, etat, plein, onFi
   };
 
   const somme = (l) => l.reduce((s, n) => s + n.montant, 0);
+  const nbDeployes = [...deployes.keys()].filter((k) => k !== "__centre").length;
   const signalees = droite.filter((n) => n.risk_flag);
   const r = entreprise.reseau_resume;
   const lignes = Math.max(G.length, D.length, 1);
@@ -383,7 +400,7 @@ function Graphe({ entreprise, montants, contrepartiesFiltrees, etat, plein, onFi
           <b>{gauche.length} client{gauche.length > 1 ? "s" : ""}</b> ont payé <b>{fmtCompact(somme(gauche))}</b> à l'entreprise ; elle a payé{" "}
           <b>{fmtCompact(somme(droite))}</b> à <b>{droite.length} fournisseur{droite.length > 1 ? "s" : ""}</b>
           {signalees.length > 0 && <>, dont <Text span c="red.7" fw={700}>{fmtCompact(somme(signalees))} ({Math.round((100 * somme(signalees)) / Math.max(1, somme(droite)))} %) à {signalees.length} contrepartie{signalees.length > 1 ? "s" : ""} signalée{signalees.length > 1 ? "s" : ""}</Text></>}.
-          {deployes.size > 0 && <Text span c="violet.7" fw={600}> · {deployes.size} réseau{deployes.size > 1 ? "x" : ""} déployé{deployes.size > 1 ? "s" : ""}</Text>}
+          {nbDeployes > 0 && <Text span c="violet.7" fw={600}> · {nbDeployes} réseau{nbDeployes > 1 ? "x" : ""} déployé{nbDeployes > 1 ? "s" : ""}</Text>}
         </Text>
         <Group gap={6} wrap="nowrap">
           <SegmentedControl size="xs" value={vue} onChange={setVue} data={[{ value: "toutes", label: "Toutes" }, { value: "signalees", label: "Signalées" }]} />
@@ -404,6 +421,15 @@ function Graphe({ entreprise, montants, contrepartiesFiltrees, etat, plein, onFi
             <Background gap={20} size={1} color="#dbe2ea" />
             <Controls showInteractive={false} position="bottom-right" />
             <Panel position="top-left"><Badge variant="white" color="ardoise" size="sm" leftSection={<ArrowRight size={11} />} styles={{ root: { textTransform: "none" } }}>payeurs à gauche · payés à droite</Badge></Panel>
+            {copilote && (
+              <Panel position="top-center">
+                <Badge variant="filled" color="violet" size="lg" radius="xl" leftSection={<Sparkles size={13} />}
+                  rightSection={<CloseButton size="xs" variant="transparent" c="white" onClick={() => setCopilote(null)} aria-label="Effacer le tracé du copilote" />}
+                  styles={{ root: { textTransform: "none", boxShadow: "0 4px 14px rgba(124,58,237,.35)" } }}>
+                  Copilote · {copilote.titre}
+                </Badge>
+              </Panel>
+            )}
             {deployes.size > 0 && !focus && (
               <Panel position="bottom-center"><Badge variant="light" color="violet" size="sm" styles={{ root: { textTransform: "none" } }}>Survolez un nœud pour isoler ses relations</Badge></Panel>
             )}
@@ -411,7 +437,7 @@ function Graphe({ entreprise, montants, contrepartiesFiltrees, etat, plein, onFi
         </div>
 
         {/* Colonne d'explication : hors du canevas, jamais rognée */}
-        <ScrollArea.Autosize mah={plein ? "calc(100vh - 150px)" : Math.max(Number(hauteurCanvas) || 440, 460)} type="auto" offsetScrollbars>
+        <ScrollArea.Autosize mah={plein ? "calc(100vh - 150px)" : Math.max(Number(hauteurCanvas) || 440, 460)} type="auto" offsetScrollbars scrollbars="y" styles={{ content: { display: "block", minWidth: 0 } }}>
           {noeudChoisi ? (
             <Explication n={noeudChoisi} entreprise={entreprise} deploye={deployes.has(noeudChoisi.id)} chargement={chargement === noeudChoisi.id}
               onFermer={() => setChoisi(null)} onFiltrer={onFiltrer} onDeployer={deployer} />
@@ -467,7 +493,29 @@ export default function GrapheReseau({ entreprise, montants, contrepartiesFiltre
   const [deployes, setDeployes] = useState(new Map());
   const [chargement, setChargement] = useState(null);
   const [plein, setPlein] = useState(false);
-  useEffect(() => { setTout({ gauche: false, droite: false }); setChoisi(null); setVue("toutes"); setDeployes(new Map()); setPlein(false); }, [entreprise.mf]);
+  const [copilote, setCopilote] = useState(null); // dernier tracé demandé par le copilote : { titre }
+  const ancre = useRef(null);
+  useEffect(() => { setTout({ gauche: false, droite: false }); setChoisi(null); setVue("toutes"); setDeployes(new Map()); setPlein(false); setCopilote(null); }, [entreprise.mf]);
+
+  // Actions du copilote (API, calculées à partir des données) : déployer un réseau, tracer un chemin
+  useActionsGraphe(entreprise.mf, (a) => {
+    if (a.type === "deployer" || a.type === "chemin") {
+      setDeployes((m) => {
+        const suivant = new Map(m);
+        for (const d of a.deploiements ?? []) {
+          const avant = suivant.get(d.id);
+          const parId = new Map((avant?.noeuds ?? []).map((n) => [n.id, n]));
+          d.noeuds.forEach((n) => parId.set(n.id, { ...parId.get(n.id), ...n }));
+          suivant.set(d.id, { nom: d.nom, noeuds: [...parId.values()], total: d.total ?? avant?.total });
+        }
+        return suivant;
+      });
+      setVue("toutes");
+      setChoisi(a.cible); // le focus anime la chaîne de la cible jusqu'à l'entreprise étudiée
+      setCopilote({ titre: a.titre });
+    }
+    if (!plein) ancre.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 
   const deployer = (n) => {
     if (deployes.has(n.id)) {
@@ -490,11 +538,12 @@ export default function GrapheReseau({ entreprise, montants, contrepartiesFiltre
     setPlein(false);
     setTimeout(() => document.getElementById("operations")?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
   };
-  const etat = { tout, setTout, vue, setVue, choisi, setChoisi, deployes, deployer, chargement };
+  const etat = { tout, setTout, vue, setVue, choisi, setChoisi, deployes, deployer, chargement, copilote, setCopilote };
   const props = { entreprise, montants, contrepartiesFiltrees, etat, onFiltrer: filtrer };
 
   return (
     <>
+      <div ref={ancre} className="scroll-mt-20" />
       {plein ? (
         <Paper withBorder p="xl" radius="lg" className="text-center">
           <Network size={20} className="mx-auto text-attenue" />

@@ -64,3 +64,41 @@ export const enregistrerDecision = (mf, corps) =>
   requete(`/api/entreprises/${mf}/decision`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corps) });
 export const demanderAssistant = (corps) =>
   requete("/api/assistant", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corps) });
+
+// Même question, en flux (text/event-stream) : `surEvenement(type, données)` reçoit les étapes (`etape`) et les actions
+// sur le graphe (`graphe`) au fil de l'eau ; la promesse rend la réponse finale. Repli sur la route classique si le flux échoue.
+export async function demanderAssistantFlux(corps, surEvenement) {
+  let r;
+  try {
+    r = await fetch(`${API}/api/assistant/flux`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corps) });
+  } catch {
+    r = null;
+  }
+  if (!r?.ok || !r.body) {
+    const rep = await demanderAssistant(corps);
+    (rep.graphe ?? []).forEach((a) => surEvenement("graphe", a));
+    return rep;
+  }
+  const lecteur = r.body.getReader();
+  const decodeur = new TextDecoder();
+  let tampon = "", finale = null;
+  for (;;) {
+    const { value, done } = await lecteur.read();
+    if (done) break;
+    tampon += decodeur.decode(value, { stream: true });
+    let fin;
+    while ((fin = tampon.indexOf("\n\n")) >= 0) {
+      const bloc = tampon.slice(0, fin);
+      tampon = tampon.slice(fin + 2);
+      const type = /^event: (.+)$/m.exec(bloc)?.[1];
+      const brut = /^data: (.+)$/m.exec(bloc)?.[1];
+      if (!type || !brut) continue;
+      const donnees = JSON.parse(brut);
+      if (type === "reponse") finale = donnees;
+      else if (type === "erreur") throw new Error(donnees.detail);
+      else surEvenement(type, donnees);
+    }
+  }
+  if (!finale) throw new Error("flux interrompu");
+  return finale;
+}

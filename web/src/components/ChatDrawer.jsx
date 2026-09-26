@@ -5,9 +5,10 @@ import { useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ActionIcon, Anchor, Badge, Button, Group, Stack, Text, Textarea, ThemeIcon, Tooltip } from "@mantine/core";
-import { ArrowUp, Eye, History, Sparkles, X } from "lucide-react";
+import { ArrowUp, Eye, History, Network, Sparkles, X } from "lucide-react";
+import { publierActionGraphe } from "../lib/copiloteGraphe.js";
 import { useContextePage } from "../lib/contextePage.jsx";
-import { demanderAssistant, meta, modeApi } from "../lib/donnees.js";
+import { demanderAssistant, demanderAssistantFlux, meta, modeApi } from "../lib/donnees.js";
 import { repondreDemo } from "../lib/copiloteDemo.js";
 import { fmtDate, fmtMoisIso } from "../lib/format.js";
 import { libelleCitation } from "../lib/signaux.js";
@@ -22,6 +23,7 @@ const ACTIONS_RAPIDES = [
 const ACTIONS_API = [
   { intention: "pourquoi", libelle: "Pourquoi ce score ?", question: "Pourquoi le risque de cette entreprise a-t-il changé ?" },
   { intention: "reseau", libelle: "Analyser le réseau", question: "Que montre le réseau de fournisseurs et de clients de cette entreprise ?" },
+  { intention: "chemin", libelle: "Tracer les liens suspects", question: "Cette entreprise est-elle reliée à une entreprise redressée pour fraude ? Trace le chemin." },
   { intention: "lettre", libelle: "Rédiger la demande d'information", question: "Rédige un projet de lettre de demande d'information." }
 ];
 const ACTIONS_LISTE = [
@@ -56,6 +58,7 @@ function Reponse({ m }) {
   const citations = m.citations ?? [];
   const visibles = toutes ? citations : citations.slice(0, 3);
   const repli = m.mode === "modele_texte";
+  const actionsGraphe = (m.graphe ?? []).filter((a) => a.type !== "afficher");
   return (
     <div className="flex flex-col gap-2">
       <div className="md text-[13px] leading-relaxed text-encre">
@@ -77,6 +80,12 @@ function Reponse({ m }) {
           <Anchor size="xs" fw={600} onClick={() => setToutes(true)}>+{citations.length - 3}</Anchor>
         )}
       </div>
+      {actionsGraphe.length > 0 && (
+        <Button variant="light" color="violet" size="compact-xs" radius="xl" fw={500} className="self-start" leftSection={<Network size={12} />}
+          onClick={() => actionsGraphe.forEach(publierActionGraphe)}>
+          {actionsGraphe.at(-1).titre} · voir sur le graphe
+        </Button>
+      )}
     </div>
   );
 }
@@ -89,6 +98,7 @@ export default function ChatDrawer({ onFermer }) {
   const [historiqueOuvert, setHistoriqueOuvert] = useState(false);
   const [voirDonnees, setVoirDonnees] = useState(false);
   const [enCours, setEnCours] = useState(false);
+  const [etape, setEtape] = useState(null); // outil en cours d'appel par le copilote (flux)
   const finRef = useRef(null);
 
   // Une conversation par page : la liste, puis une par entreprise
@@ -122,10 +132,20 @@ export default function ChatDrawer({ onFermer }) {
       // POST /api/assistant (contrat §6.2) : sur la fiche, l'assistant lit aussi la fiche, les preuves et le réseau
       // par ses outils ; sur la liste (sans mf), il répond à partir des données affichées
       const historique = messages.map((m) => ({ role: m.role === "inspecteur" ? "user" : "assistant", contenu: m.texte }));
-      demanderAssistant({ mf: surFiche ? instantane.entreprise.mf : null, question, historique, contexte: instantane })
-        .then((r) => ajouter({ role: "copilote", texte: r.reponse, citations: r.citations ?? [], mode: r.mode, raison: r.raison_repli, duree: duree() }))
+      // sur la fiche, en flux : chaque outil de réseau appelé met à jour le graphe avant même la réponse écrite
+      const corps = { mf: surFiche ? instantane.entreprise.mf : null, question, historique, contexte: instantane };
+      const actionsVues = [];
+      const appel = surFiche
+        ? demanderAssistantFlux(corps, (type, d) => {
+          if (type === "etape") setEtape(d.texte);
+          if (type === "graphe") { actionsVues.push(d); publierActionGraphe(d); }
+        })
+        : demanderAssistant(corps);
+      appel
+        .then((r) => ajouter({ role: "copilote", texte: r.reponse, citations: r.citations ?? [], mode: r.mode, raison: r.raison_repli,
+                               graphe: r.graphe?.length ? r.graphe : actionsVues, duree: duree() }))
         .catch((err) => ajouter({ role: "copilote", texte: `L'assistant est indisponible (${err.message}).`, mode: "erreur", duree: duree() }))
-        .finally(() => setEnCours(false));
+        .finally(() => { setEnCours(false); setEtape(null); });
       return;
     }
     // Jeu fictif : réponse calculée localement sur les données affichées
@@ -209,7 +229,7 @@ export default function ChatDrawer({ onFermer }) {
           <Reponse key={i} m={m} />
         ))}
         {enCours && (
-          <LatticeLoader {...LOADER} status="working" label={surFiche ? "Lecture de la fiche et des preuves" : "Lecture du portefeuille"}
+          <LatticeLoader {...LOADER} status="working" label={etape ?? (surFiche ? "Lecture de la fiche et des preuves" : "Lecture du portefeuille")}
             doneLabel="Répondu en" errorLabel="Échec après" fontSize={12.5} className="text-encre-2" />
         )}
         <div ref={finRef} />

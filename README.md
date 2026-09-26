@@ -40,7 +40,7 @@ action. **L'inspecteur garde la décision.**
 | 2 | Il ouvre la première fiche, Alpha SARL. | Score **84/100** (+78 points depuis septembre 2025), enjeu estimé **45 k DT**, la courbe « déclaré vs observé » et la **trajectoire mensuelle** du score : Alpha était en confiance jusqu'en mai, puis 46 → 72 → 84. |
 | 3 | Il veut comprendre **pourquoi**. | Le panneau **« Pourquoi ce score ? »** : base 5 + chaque signal avec ses **points** et une phrase chiffrée (« les importations du mois sont à 10 écarts-types au-dessus de leur niveau habituel », « 5 fournisseurs apparus récemment »…). Un clic ouvre les **pièces sources** (lignes de déclaration en douane, d'annexe V…). Comparaison avec **250 entreprises pairs** du même secteur et de la même taille. |
 | 4 | Il regarde avec qui Alpha travaille. | Le **graphe des flux d'argent** (qui paie qui, combien, depuis quand), les contreparties signalées en rouge avec la **raison** de leur signalement. « **Déployer son réseau** » étend le graphe à la contrepartie suspecte pour remonter une chaîne (ex. El Moul → Sfar Distribution → Ifriqiya Transport). |
-| 5 | Il pose une question en langage naturel. | Le **copilote** (Qwen 3.5 9B hébergé en local) répond à partir des données du dossier uniquement, cite ses pièces, et peut **rédiger la lettre de demande d'information**. Tout chiffre non présent dans les données est bloqué. |
+| 5 | Il pose une question en langage naturel. | Le **copilote** (Qwen 3.5 9B hébergé en local) répond à partir des données du dossier uniquement, cite ses pièces, et peut **rédiger la lettre de demande d'information**. Tout chiffre non présent dans les données est bloqué. Il **agit sur le graphe en direct** : « Tracer les liens suspects » dessine et anime le chemin jusqu'à une entreprise redressée pour fraude ; « Qui d'autre travaille avec Shenzhen Tools Co. ? » déploie le réseau de ce fournisseur, avant même que la réponse écrite n'arrive. |
 | 6 | Il décide. | Il choisit l'action (aucune, relance, demande d'information, vérification, signalement à la douane) et **justifie** sa décision, qui est journalisée. Ces décisions deviennent de **nouveaux exemples d'apprentissage** : le modèle s'améliore avec l'usage. |
 
 Basira propose, explique et documente ; **aucune sanction n'est automatique**. À l'inverse, les entreprises sans aucun signal depuis
@@ -95,7 +95,8 @@ L'IA est placée **là où elle apporte quelque chose**, et chaque étage reste 
 | **Expliquer** | Décomposition exacte du score : chaque point est attribué à un signal (somme des points = score − base) | l'inspecteur sait **pourquoi**, chiffres et pièces à l'appui ; aucune « boîte noire » |
 | **Prioriser** | Priorité = score × enjeu estimé (droits éludés reconstitués à partir des écarts) | on contrôle d'abord là où **le risque et l'argent** sont les plus élevés |
 | **Détecter l'inédit** | Bonus « nouveau schéma » : plusieurs signaux forts réunis alors qu'ils pèsent peu dans l'historique | ne pas ignorer une combinaison que les contrôles passés n'ont jamais vue |
-| **Assister** | LLM **Qwen 3.5 9B** local, 4 outils (dossier, preuves, réseau, lettre) + garde-fou sur les chiffres | l'inspecteur interroge le dossier en français ; **aucun chiffre inventé**, **aucune donnée ne sort** du réseau local |
+| **Assister** | LLM **Qwen 3.5 9B** local, 6 outils (dossier, preuves, réseau, lettre, **liens d'une contrepartie**, **chemin vers une entreprise redressée**) + garde-fou sur les chiffres | l'inspecteur interroge le dossier en français ; **aucun chiffre inventé**, **aucune donnée ne sort** du réseau local |
+| **Enquêter sur le graphe** | Le copilote choisit les outils de réseau ; l'API calcule le résultat à partir des relations déclarées et l'envoie **en flux** au graphe de l'écran | l'IA **navigue** dans le réseau (remonter une chaîne, explorer un fournisseur) et le **montre** ; elle n'invente jamais un lien : le graphe ne contient que des relations déclarées |
 | **Apprendre** | Boucle : décision de l'inspecteur → exemple étiqueté → réentraînement (hors démo, validé avant mise en service) | le système s'améliore avec l'usage, sous contrôle humain |
 
 **Ce que nous ne revendiquons pas** (voir [§5.3](#53-indicateurs-clés-métriques-de-lia)) : avec seulement 276 contrôles passés, les poids
@@ -118,6 +119,9 @@ son sens avec les décisions des inspecteurs.
   actifs visibles.
 - **Copilote IA** sur la liste et sur chaque fiche : réponses en Markdown, sources citées, questions suggérées, rédaction de la lettre de
   demande d'information, repli déterministe si le LLM ne répond pas.
+- **Copilote × graphe, en direct** : pendant que le copilote travaille, chaque outil de réseau qu'il appelle met à jour le graphe
+  (déploiement du réseau d'une contrepartie, chemin animé jusqu'à une entreprise redressée, bandeau « Copilote · … », panneau
+  d'explication ouvert sur la cible) ; l'étape en cours s'affiche dans le copilote ; « voir sur le graphe » rejoue le tracé.
 - **Décision** : action choisie + justification obligatoire, journalisée (`decisions.csv`) ; réutilisée par la boucle d'apprentissage.
 
 ### 5.2 Écrans
@@ -127,6 +131,7 @@ son sens avec les décisions des inspecteurs.
 | ![Portefeuille](docs/captures/01_portefeuille.png) **Portefeuille** : 5 250 entreprises classées par priorité, déclencheur et action pour chacune. | ![Fiche](docs/captures/02_fiche.png) **Fiche** : score 84/100, enjeu, déclaré vs observé, trajectoire mensuelle du score. |
 | ![Pourquoi ce score](docs/captures/03_pourquoi.png) **« Pourquoi ce score ? »** : chaque point attribué à un signal, avec preuves et comparaison aux pairs. | ![Opérations](docs/captures/04_operations.png) **Opérations** : les pièces sources (SINDA, ADEB, annexe V), contreparties signalées en rouge. |
 | ![Copilote](docs/captures/05_copilote.png) **Copilote** : réponse ancrée dans les données du dossier, pièces citées. | ![Réseau](docs/captures/06_reseau.png) **Réseau déployé** : remonter une chaîne de fournisseurs suspects, avec la raison de chaque signalement. |
+| ![Copilote trace un chemin](docs/captures/08_copilote_chemin.png) **Copilote × graphe** : « Tracer les liens suspects » anime le chemin Alpha → El Khalel → Hadj Ali Packaging → Jemli Négoce (redressée, 200 613 DT). | ![Copilote déploie un réseau](docs/captures/09_copilote_reseau.png) **Copilote × graphe** : « Qui d'autre travaille avec Shenzhen Tools Co. ? » déploie les 4 autres importateurs, tous prioritaires. |
 
 ### 5.3 Indicateurs clés (métriques de l'IA)
 
@@ -150,8 +155,8 @@ Protocole : période de test = les 12 derniers mois (septembre 2025 → août 20
 | Fraudes entrées au moins une fois dans la sélection mensuelle | 86 sur 299 (capacité de 50 contrôles/mois) |
 | Délai moyen entre le début d'une fraude et son entrée dans la sélection | 4,5 mois (pas d'avance mesurée sur la règle statique) |
 | Part PRIORITAIRE par schéma | coquilles 85 %, sous-évaluation douane 70 %, réseaux de fausses factures 67 %, recettes publiques non déclarées 67 %, minoration du CA 55 %, dormante réactivée 12 %, compression de marge 8 % ; croissance légitime 9 %, entreprises sans fraude 1 % |
-| Copilote | réponses en 3 à 30 s (Qwen 3.5 9B, quantification Q4_K_M) ; tout chiffre absent des données déclenche la réponse de repli |
-| Tests automatiques | 52 (schémas, absence de fuite du futur, preuves, identités financières, propriétés du score, API, garde-fou de l'assistant) |
+| Copilote | réponses en 3 à 30 s (Qwen 3.5 9B, quantification Q4_K_M) ; graphe mis à jour en 0,2 à 3 s, avant la réponse écrite ; tout chiffre absent des données déclenche la réponse de repli |
+| Tests automatiques | 53 (schémas, absence de fuite du futur, preuves, identités financières, propriétés du score, API, garde-fou de l'assistant) |
 
 ## 6. Pipeline technique
 
@@ -180,7 +185,7 @@ flowchart TB
     end
     subgraph API["④ API — api/ (C, FastAPI)"]
         direction LR
-        P1["Portefeuille · fiche<br/>preuves · réseau"] ~~~ P2["Explications<br/>chiffrées"] ~~~ P3["Assistant : 4 outils<br/>+ garde-fou chiffres"] ~~~ P4["Décisions<br/>decisions.csv"]
+        P1["Portefeuille · fiche<br/>preuves · réseau"] ~~~ P2["Explications<br/>chiffrées"] ~~~ P3["Assistant : 6 outils<br/>+ graphe en direct"] ~~~ P4["Décisions<br/>decisions.csv"]
     end
     LLM["⑤ Qwen 3.5 9B<br/>llama-server, PC local"]
     subgraph WEB["⑥ Interface de l'inspecteur — web/ (D, React)"]
@@ -193,7 +198,7 @@ flowchart TB
     SIG -->|"signaux, preuves, enjeu"| SCO
     RAW -->|"contrôles passés = étiquettes"| SCO
     SCO -->|"scores · modele.json · evaluation.json"| API
-    API <-->|"JSON"| WEB
+    API <-->|"JSON · flux en direct"| WEB
     API <-->|"API compatible OpenAI"| LLM
     WEB -.->|"⑦ décisions → boucle d'apprentissage"| SCO
 ```
@@ -245,8 +250,12 @@ flowchart TB
 - **Explications chiffrées** (`explications.py`, `front.py`) : chaque contribution et chaque contrepartie signalée reçoit une phrase
   avec ses chiffres (critères de coquille, 3 principales raisons d'une entreprise prioritaire, fournisseur étranger adopté en même temps
   par plusieurs importateurs…).
-- **Assistant** (`assistant.py`) : un appel au LLM avec 4 outils (`get_entreprise`, `get_preuves`, `get_reseau`,
-  `rediger_lettre_demande_info`) et le contexte de l'écran. **Garde-fou** : tout nombre de la réponse doit figurer dans les données
+- **Assistant** (`assistant.py`) : un appel au LLM avec 6 outils (`get_entreprise`, `get_preuves`, `get_reseau`,
+  `rediger_lettre_demande_info`, `get_liens_contrepartie`, `get_chemin_redresse`) et le contexte de l'écran. Quand la question
+  désigne sans ambiguïté une contrepartie ou un lien avec une entreprise redressée, l'outil correspondant est exécuté d'office.
+  Les deux outils de graphe renvoient aussi une **action** (déployer, tracer un chemin) calculée par l'API à partir des relations
+  déclarées — jamais par le modèle — que la route `POST /api/assistant/flux` (text/event-stream) envoie à l'interface dès que
+  l'outil a répondu, avec l'étape en cours ; la réponse écrite suit. **Garde-fou** : tout nombre de la réponse doit figurer dans les données
   consultées, sinon Basira renvoie une réponse déterministe construite à partir des faits (`modele_texte.py`) et indique pourquoi. Même
   repli si le LLM est indisponible, refuse les outils ou dépasse 45 s.
 
@@ -272,7 +281,7 @@ uv run python -m signaux.run --data-dir data           # B : signaux, preuves, e
 uv run python -m scoring.run                           # C : modèle, scores, évaluation (~10 s)
 bash scripts/demo.sh                                   # API :8000 + interface :5173 (sans LLM : réponses de repli)
 LLM_BASE_URL=http://<pc-du-llm>:8200/v1 bash scripts/demo.sh   # avec Qwen servi par llama-server
-uv run pytest -q                                       # 52 tests
+uv run pytest -q                                       # 53 tests
 ```
 
 Interface : http://localhost:5173 · API : http://localhost:8000/docs. Commandes, variables d'environnement et méthode détaillée :
@@ -286,7 +295,7 @@ signaux/      B · 16 signaux, preuves, pairs, enjeu, note de synthèse PDF
 scoring/      C · apprentissage, calibrage, score, enjeu complété, évaluation, boucle
 api/          C · FastAPI, explications chiffrées, assistant + garde-fou, décisions
 web/          D · interface de l'inspecteur (React)
-tests/        52 tests (A, B, C, API)
+tests/        53 tests (A, B, C, API)
 docs/         spécifications, contrat d'intégration, docs des lots, captures, note de synthèse
 data/mock/    réponses d'exemple du contrat (le reste de data/ est régénéré par le pipeline)
 ```

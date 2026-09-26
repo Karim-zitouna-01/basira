@@ -363,6 +363,38 @@ class FrontStore:
         for n in noeuds:
             n["liees"] = liens.get(n["id"], [])
         r = s.scores.get((ident, self.mois))
-        return {"id": ident, "nom": s.noms.get(ident) or s.noms_fe.get(ident) or s.noms_ap.get(ident) or ident,
+        return {"id": ident, "nom": self.nom(ident),
                 "segment": r["segment"] if r else None, "score": round(r["score"]) if r else None,
                 "noeuds": noeuds, "total": resume["relations_fenetre"]}
+
+    def nom(self, ident: str) -> str:
+        s = self.s
+        return s.noms.get(ident) or s.noms_fe.get(ident) or s.noms_ap.get(ident) or ident
+
+    def noeud_vu_de(self, p: str, c: str) -> dict | None:
+        """Nœud `c` tel qu'il apparaît dans le réseau de `p` (même forme que `voisins`), toutes relations p–c cumulées,
+        sans limite de fenêtre : sert à dessiner un chemin tracé par le copilote."""
+        s, n = self.s, None
+        for a in s.adj.get(p, []):
+            if (a["cible"] if a["source"] == p else a["source"]) != c:
+                continue
+            sortant = a["source"] == p
+            genre, relation = self.RELATIONS.get((a["type_relation"], sortant), ("Contrepartie", a["type_relation"]))
+            depuis = str(a["premiere_date"])[:10]
+            if n is None:
+                n = {"id": c, "label": self.nom(c), "type": genre, "relation": relation, "sens": "sortant" if sortant else "entrant",
+                     "montant_dt": 0.0, "depuis": depuis, "segment": self._segment(c) if c in s.identites else None,
+                     "coquille": s._est_coquille(c, self.mois), "nb_liees": 0, "liees": []}
+            n["montant_dt"] = round(n["montant_dt"] + float(a["montant_total"] or 0), 3)
+            n["depuis"] = min(n["depuis"], depuis)
+        if n is None:
+            return None
+        n["nouvelle"] = n["depuis"][:7] >= _mois_moins(self.mois, MOIS_NOUVELLE_RELATION)
+        n["motif"] = self._motif(c, p)
+        n["risk_flag"] = n["motif"] is not None
+        n["motif_detail"] = self._motif_detail(c, p) if n["risk_flag"] else None
+        return n
+
+    def affiches(self, mf: str) -> set[str]:
+        """Contreparties dessinées d'office dans le graphe de la fiche (les autres doivent être ajoutées)."""
+        return {n["id"] for n in self._reseau(mf)[0]}

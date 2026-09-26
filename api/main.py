@@ -5,12 +5,16 @@ Mode : BASIRA_MODE=mock | real | auto (défaut : real si data/scores/scores.parq
 L'API ne recalcule rien : elle lit les fichiers au démarrage et les garde en mémoire.
 """
 
+import json
 import logging
+import queue
+import threading
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from scoring import config
@@ -116,9 +120,38 @@ def decision(mf: str, req: DecisionRequete):
 @app.post("/api/assistant")
 def assistant_route(req: AssistantRequete):
     try:
-        return assistant.repondre(store, req.mf, req.mois, req.question, [m.model_dump() for m in req.historique], req.contexte)
+        return assistant.repondre(store, req.mf, req.mois, req.question, [m.model_dump() for m in req.historique], req.contexte, front)
     except Introuvable as e:
         _introuvable(e)
+
+
+@app.post("/api/assistant/flux")
+def assistant_flux(req: AssistantRequete):
+    """Même réponse que /api/assistant, en flux (text/event-stream) : `etape` (outil appelé), `graphe` (action sur le graphe
+    de l'écran, calculée à partir des données, dès que l'outil a répondu), puis `reponse` (ou `erreur`)."""
+    file: queue.Queue = queue.Queue()
+
+    def travail():
+        try:
+            r = assistant.repondre(store, req.mf, req.mois, req.question, [m.model_dump() for m in req.historique], req.contexte,
+                                   front, evenement=lambda t, d: file.put((t, d)))
+            file.put(("reponse", r))
+        except Introuvable as e:
+            file.put(("erreur", {"detail": f"introuvable : {e}"}))
+        except Exception as e:  # noqa: BLE001 — l'interface doit toujours recevoir une fin de flux
+            logging.exception("assistant (flux)")
+            file.put(("erreur", {"detail": str(e)}))
+        finally:
+            file.put(None)
+
+    threading.Thread(target=travail, daemon=True).start()
+
+    def flux():
+        while (item := file.get()) is not None:
+            t, d = item
+            yield f"event: {t}\ndata: {json.dumps(d, ensure_ascii=False, default=str)}\n\n"
+
+    return StreamingResponse(flux(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 @app.get("/api/evaluation")

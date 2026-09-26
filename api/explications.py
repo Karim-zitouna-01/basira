@@ -33,6 +33,15 @@ def _indicateur(pairs: dict, nom: str) -> dict | None:
 def entite_redressee_proche(store, mf: str, mois: str, profondeur: int = 3, hub: int = 20):
     """Entreprise redressée pour fraude significative la plus proche dans le graphe (règle de A : les hubs ne relaient pas).
     Renvoie (mf, nom, distance, chemin de noms) ou None."""
+    ids = chemin_redresse(store, mf, mois, profondeur, hub)
+    if ids is None:
+        return None
+    x = ids[-1]
+    return x, store.noms.get(x, x), len(ids) - 1, [store.noms.get(y, y) for y in ids]
+
+
+def chemin_redresse(store, mf: str, mois: str, profondeur: int = 3, hub: int = 20) -> list[str] | None:
+    """Chemin d'identifiants [mf, …, entreprise redressée] le plus court (annexes V et II), ou None."""
     fin = f"{mois}-31"
     redressees = {m for m, ctl in store.controles.items()
                   for c in ctl if c["categorie_resultat"] == "FRAUDE_SIGNIFICATIVE" and str(c["date_avis"]) <= fin}
@@ -52,9 +61,9 @@ def entite_redressee_proche(store, mf: str, mois: str, profondeur: int = 3, hub:
             if x in redressees:
                 chemin, y = [], x
                 while y is not None:
-                    chemin.append(store.noms.get(y, y))
+                    chemin.append(y)
                     y = vus[y]
-                return x, store.noms.get(x, x), d + 1, list(reversed(chemin))
+                return list(reversed(chemin))
             file.append((x, d + 1))
     return None
 

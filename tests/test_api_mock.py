@@ -76,8 +76,9 @@ def test_decision_aller_retour():
                                       "Quels fournisseurs posent problème ?"])
 def test_assistant_modele_texte(question):
     r = c.post("/api/assistant", json={"mf": ALPHA, "mois": "2026-08", "question": question, "historique": []}).json()
-    assert set(r) == {"reponse", "citations", "mode", "raison_repli"}  # raison_repli : ajout au contrat (motif du repli)
-    assert r["mode"] == "modele_texte" and r["reponse"] and r["citations"]
+    # ajouts au contrat : raison_repli (motif du repli), graphe (actions montrées sur le graphe de l'écran)
+    assert set(r) == {"reponse", "citations", "mode", "raison_repli", "graphe"}
+    assert r["mode"] == "modele_texte" and r["reponse"] and r["citations"] and r["graphe"] == []
     assert r["raison_repli"] == "LLM_BASE_URL non défini"
 
 
