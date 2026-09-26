@@ -72,7 +72,8 @@ class Engine:
         weights = d.aggregate(reference_rows, "valeur_caf_tnd")
         reference_ratio = ratio(d.aggregate(reference_rows, "weighted"), weights)
         signals = {
-            "COH_IMPORT_VS_CA": (growth_gap, np.clip(growth_gap / 200, 0, 1) * due_complete),
+            # Without recent imports a falling turnover alone must not read as imports outgrowing it.
+            "COH_IMPORT_VS_CA": (growth_gap, np.clip(growth_gap / 200, 0, 1) * due_complete * (import_recent > 0)),
             "COH_CLIENTS_VS_CA": (
                 paid_ratio,
                 np.clip((paid_ratio - 1) / 2, 0, 1) * annual_due,

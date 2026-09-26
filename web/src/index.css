@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+/* Jetons de couleur : chaque palette candidate redéfinit les mêmes variables.
+   Le sélecteur de palette de l'en-tête est temporaire, le temps du choix. */
+@theme inline {
+  --color-fond: var(--fond);
+  --color-fond-2: var(--fond-2);
+  --color-carte: var(--carte);
+  --color-bordure: var(--bordure);
+  --color-encre: var(--encre);
+  --color-encre-2: var(--encre-2);
+  --color-attenue: var(--attenue);
+  --color-entete: var(--entete);
+  --color-entete-encre: var(--entete-encre);
+  --color-action: var(--action);
+  --color-action-encre: var(--action-encre);
+  --color-action-texte: var(--action-texte);
+  --color-prio: var(--seg-prio);
+  --color-prio-texte: var(--seg-prio-texte);
+  --font-sans: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+
+:root,
+:root[data-palette="A"] {
+  --fond: #f8fafc; --fond-2: #f1f5f9; --carte: #ffffff; --bordure: #e2e8f0;
+  --encre: #0f172a; --encre-2: #334155; --attenue: #64748b;
+  --entete: #ffffff; --entete-encre: #0f172a;
+  --action: #2563eb; --action-encre: #ffffff; --action-texte: #1d4ed8;
+  --seg-prio: #dc2626; --seg-prio-texte: #b91c1c;
+  --seg-surv: #e08a00; --seg-surv-texte: #b45309;
+  --seg-norm: #9aa5b8; --seg-norm-texte: #475569;
+  --seg-conf: #047857; --seg-conf-texte: #047857;
+}
+:root[data-palette="B"] {
+  --fond: #f4f6fa; --fond-2: #e9eef5; --carte: #ffffff; --bordure: #d9e1ec;
+  --encre: #0b1b33; --encre-2: #33445c; --attenue: #62718a;
+  --entete: #0b2545; --entete-encre: #ffffff;
+  --action: #1d4ed8; --action-encre: #ffffff; --action-texte: #1d4ed8;
+  --seg-prio: #c8102e; --seg-prio-texte: #a00d25;
+  --seg-surv: #d97706; --seg-surv-texte: #b45309;
+  --seg-norm: #9aa5b8; --seg-norm-texte: #4b5565;
+  --seg-conf: #0f766e; --seg-conf-texte: #0f766e;
+}
+:root[data-palette="C"] {
+  --fond: #fafaf9; --fond-2: #f5f5f4; --carte: #ffffff; --bordure: #e7e5e4;
+  --encre: #1c1917; --encre-2: #44403c; --attenue: #78716c;
+  --entete: #ffffff; --entete-encre: #1c1917;
+  --action: #155eef; --action-encre: #ffffff; --action-texte: #155eef;
+  --seg-prio: #b42318; --seg-prio-texte: #b42318;
+  --seg-surv: #f08c00; --seg-surv-texte: #b54708;
+  --seg-norm: #a8a29e; --seg-norm-texte: #57534e;
+  --seg-conf: #067647; --seg-conf-texte: #067647;
+}
+:root[data-palette="D"] {
+  --fond: #f7f9fc; --fond-2: #eef2f7; --carte: #ffffff; --bordure: #dde3ec;
+  --encre: #111827; --encre-2: #374151; --attenue: #6b7280;
+  --entete: #ffffff; --entete-encre: #111827;
+  --action: #1e293b; --action-encre: #ffffff; --action-texte: #1e293b;
+  --seg-prio: #d62839; --seg-prio-texte: #b01f2e;
+  --seg-surv: #eda100; --seg-surv-texte: #a86b00;
+  --seg-norm: #52a675; --seg-norm-texte: #2f7a4f;
+  --seg-conf: #1d5fb0; --seg-conf-texte: #1d5fb0;
+}
+
+/* Couleurs des systèmes sources : fixes, distinctes des couleurs de statut */
+:root {
+  --src-sinda: #3569b5; --src-adeb: #b8862b; --src-tj: #2ba5a0; --src-rafik: #4d5563;
+  color-scheme: light;
+}
+
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--fond);
+  color: var(--encre);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+.chiffres { font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 2px solid var(--action); outline-offset: 2px; }
+
+/* Graphiques DC.js : alignés sur les jetons */
+.dc-chart { float: none; }
+.dc-chart svg { overflow: visible; }
+.dc-chart .axis text, .dc-chart text { font-family: var(--font-sans); font-size: 10.5px; fill: var(--attenue); }
+.dc-chart .axis path, .dc-chart .axis line { stroke: var(--bordure); }
+.dc-chart .grid-line line, .dc-chart .grid-line.horizontal line { stroke: var(--bordure); opacity: 1; }
+.dc-chart g.row text { fill: var(--encre); font-size: 11px; }
+.dc-chart g.row rect { cursor: pointer; }
+.dc-chart .selection { fill: var(--action); fill-opacity: .12; stroke: var(--action); stroke-opacity: .6; }
+.dc-chart .deselected { opacity: .25; }
+.dc-chart g.row rect.deselected { fill: var(--bordure) !important; opacity: 1; }
+.dc-chart rect.bar { cursor: crosshair; }
+.dc-chart path.line { stroke-width: 2px; }
+.dc-chart path.area { fill-opacity: .08; }
+.dc-chart .dc-tooltip circle.dot { stroke: var(--carte); stroke-width: 2px; }
+.dc-chart .y-axis-label, .dc-chart .x-axis-label { fill: var(--attenue); font-size: 10.5px; }
+
+/* Table d'opérations (dc.dataTable) */
+table.dc-data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+table.dc-data-table th { position: sticky; top: 0; background: var(--fond-2); text-align: left; font-weight: 600; font-size: 11px; letter-spacing: .03em; text-transform: uppercase; color: var(--attenue); padding: 7px 10px; white-space: nowrap; }
+table.dc-data-table td { padding: 7px 10px; border-top: 1px solid var(--bordure); color: var(--encre-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+table.dc-data-table tr.dc-table-group { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* Mini-courbes des cartes : sans axes */
+.sparkline g.axis, .sparkline .grid-line { display: none; }

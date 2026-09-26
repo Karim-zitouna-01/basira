@@ -17,6 +17,8 @@
 | 11 | **Enjeu complété** (validé par l'équipe) | `data/scores/enjeux.parquet` = max(enjeu B, droits éludés sur articles < 80 % du prix de référence + ventes cachées si croissance imports − CA ≥ 50 pts). L'API et la priorité l'utilisent. B ne chiffrait ni la douane (Beta : 328 DT) ni la croissance d'imports (Alpha : 22 DT). | B |
 | 12 | `fait_fr` des signaux faibles | Quand B ne fournit pas de phrase (signal < 0.5 mais porteur de points), l'API en compose une à partir de `valeur_brute`, préfixée « Signal faible ». | D |
 | 13 | Correctif dans `signaux/engine.py` (B) | Les COH_* sont calculés si la déclaration était **due** 12 mois (pas **déposée**) : une déclaration non déposée compte pour 0 au lieu de désactiver le contrôle (Omega, Delta y échappaient). Pairs et enjeu de B inchangés. | B |
+| 15 | Correctif 2 dans `signaux/engine.py` (B) | `COH_IMPORT_VS_CA` exige des imports sur les 6 derniers mois : sinon une baisse du CA seule donnait un « écart imports/CA » (Omega, sans aucun import). | B |
+| 16 | **Intégration de l'interface de D** | D a construit une app Vite/React sur son propre modèle de données (pas celui du contrat §6). Plutôt que réécrire ses pages, `api/front.py` sert ses formes (`/api/front/*`) à partir des vraies données ; ajouts : panneau « Pourquoi ce score ? » + décision (manquaient), copilote de la fiche sur `/api/assistant`. Sources : TJ → annexe V ; RAFIK sans source. | D |
 | 14 | Assistant | `enable_thinking=false` ; un seul message système (contrainte du gabarit Qwen) ; bascule automatique en plan B si le serveur refuse les outils ou si le modèle répond sans outil ; délai 30 s. | — |
 
 ## Écarts connus aux héros (contrat §7), acceptés

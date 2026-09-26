@@ -10,11 +10,13 @@ from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel, Field
 
 from scoring import config
 
 from . import assistant
+from .front import FrontStore
 from .store import Introuvable, creer_store
 
 logging.basicConfig(level=logging.INFO)
@@ -28,7 +30,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(GZipMiddleware, minimum_size=2000)  # le portefeuille de l'interface pèse ~3 Mo en JSON
+
 store = creer_store()
+front = FrontStore(store) if store.mode == "real" else None  # formes de données de l'interface de D (web/)
 
 
 def _introuvable(e: Introuvable):
@@ -120,4 +125,24 @@ def evaluation():
     try:
         return store.evaluation()
     except Introuvable as e:
+        _introuvable(e)
+
+
+# ------------------------------------------------------------------ interface de D (web/) : ses propres formes de données
+def _front() -> FrontStore:
+    if front is None:
+        raise HTTPException(status_code=503, detail="mode mock : l'interface utilise son jeu fictif (VITE_API_URL vide)")
+    return front
+
+
+@app.get("/api/front/portefeuille")
+def front_portefeuille():
+    return _front().portefeuille()
+
+
+@app.get("/api/front/entreprises/{mf}")
+def front_fiche(mf: str):
+    try:
+        return _front().fiche(mf)
+    except (KeyError, Introuvable) as e:
         _introuvable(e)

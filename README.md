@@ -7,7 +7,7 @@ Score de risque de conformité dynamique et explicable. Contrat d'intégration :
 | A | `generation/`, `tools/lan_forward.py` | monde synthétique (`data/raw`, `data/graphe`) | `docs/lot_A/README.md` |
 | B | `signaux/`, `scripts/benchmark.sh` | 16 signaux, preuves, enjeux, pairs (`data/signaux`), note de synthèse PDF | `docs/lot_B/` |
 | C | `scoring/`, `api/` | score appris, enjeu complété, évaluation, API, assistant (`data/scores`) | ce fichier |
-| D | `web/` (à venir) | interface Next.js | `docs/specifications/member_D_task.md` |
+| D | `web/` | interface de l'inspecteur (Vite + React, DC.js/Crossfilter, D3) | ci-dessous |
 
 ## Installation (WSL / Linux, avec uv)
 
@@ -25,7 +25,27 @@ uv run python -m signaux.checks --data-dir data       # B : contrôle des héros
 uv run python -m scoring.run                          # C : ~7 s, modèle, enjeux, scores, héros, évaluation
 ```
 
-## Lancer l'API
+## Lancer la démo (API + interface)
+
+```bash
+bash scripts/demo.sh                                             # sans LLM (réponses de repli)
+LLM_BASE_URL=http://10.165.184.86:8200/v1 bash scripts/demo.sh   # avec le Qwen distant (point d'accès)
+```
+
+Interface : http://localhost:5173 (depuis Windows aussi) · API : http://localhost:8000/docs. Ctrl+C arrête les deux.
+Node 22 est installé dans `~/.local/node` (sans sudo) ; `scripts/demo.sh` lance `npm ci` si `web/node_modules` manque.
+
+### Interface (`web/`)
+
+- `web/.env` : `VITE_API_URL=http://localhost:8000`. Vide → jeu fictif de D (`web/src/data/mockData.json`), sans API.
+- L'interface garde ses propres formes de données ; l'API les sert via `api/front.py` :
+  `GET /api/front/portefeuille` (5 250 entreprises + 12 mois compacts, ~3 Mo gzip) et `GET /api/front/entreprises/{mf}`
+  (historique, opérations douane/ADEB/annexe V, réseau, contrôles + fiche du contrat §6 dans `detail`).
+- Ajouts à l'interface de D : panneau « Pourquoi ce score ? » (contributions en points, phrase, preuves brutes, pairs) et
+  décision de l'inspecteur (`components/PourquoiScore.jsx`) ; copilote de la fiche branché sur `POST /api/assistant`
+  (la liste garde les réponses calculées localement) ; table limitée à 200 lignes affichées ; « écart de recoupement » = enjeu estimé.
+
+## Lancer l'API seule
 
 ```bash
 # sans LLM (réponses modele_texte) :
