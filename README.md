@@ -153,6 +153,11 @@ Protocole : période de test = les 12 derniers mois (septembre 2025 → août 20
 
 ## 6. Pipeline technique
 
+![Pipeline technique de Basira](docs/captures/07_pipeline.png)
+
+<details>
+<summary>Version interactive du diagramme (Mermaid, zoomable)</summary>
+
 ```mermaid
 flowchart TB
     subgraph GEN["① Génération du monde synthétique — generation/ (A)"]
@@ -190,6 +195,8 @@ flowchart TB
     API <-->|"API compatible OpenAI"| LLM
     WEB -.->|"⑦ décisions → boucle d'apprentissage"| SCO
 ```
+
+</details>
 
 ### Description détaillée des étapes
 
