@@ -84,6 +84,7 @@ SEUIL_ACTIF = 0.5
 
 SEUILS = {"PRIORITAIRE": 70, "SURVEILLANCE": 40, "CONFIANCE": 15}
 BONUS_MAX = 15.0
+SCORE_MAX = 99.0  # plafond d'affichage : jamais 100 (pas de certitude)
 # Plancher « preuve forte » : écart très marqué entre deux sources indépendantes → au moins PRIORITAIRE
 SIGNAUX_PREUVE = tuple(c for c, lentille in SIGNAUX_B.items() if lentille == "COHERENCE")
 SEUIL_PREUVE = 0.8
@@ -129,7 +130,7 @@ LLM_BASE_URL = os.environ.get("LLM_BASE_URL", "")
 LLM_MODEL = os.environ.get("LLM_MODEL", "qwen3.5:9b")
 LLM_API_KEY = os.environ.get("LLM_API_KEY", "ollama")
 LLM_TOOLS = os.environ.get("LLM_TOOLS", "1") == "1"
-LLM_TIMEOUT = float(os.environ.get("LLM_TIMEOUT", "30"))
+LLM_TIMEOUT = float(os.environ.get("LLM_TIMEOUT", "45"))
 LLM_THINKING = os.environ.get("LLM_THINKING", "0") == "1"  # 0 → enable_thinking=false (Qwen 3.5, latence)
 LLM_MAX_TOKENS = int(os.environ.get("LLM_MAX_TOKENS", "700"))
 

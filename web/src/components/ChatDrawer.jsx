@@ -19,6 +19,11 @@ const ACTIONS_API = [
   { intention: "reseau", libelle: "🕸️ Analyser le réseau", question: "Que montre le réseau de fournisseurs et de clients de cette entreprise ?" },
   { intention: "lettre", libelle: "📄 Rédiger la demande d'information", question: "Rédige un projet de lettre de demande d'information." }
 ];
+const ACTIONS_LISTE = [
+  { intention: "priorites", libelle: "🎯 Quels dossiers ouvrir en premier ?", question: "Parmi les entreprises affichées, lesquelles dois-je examiner en premier et pourquoi ?" },
+  { intention: "evolution", libelle: "📈 Qu'est-ce qui a changé ce mois-ci ?", question: "Qu'est-ce qui a changé ce mois-ci dans le portefeuille affiché ?" },
+  { intention: "synthese", libelle: "📄 Synthèse de la sélection", question: "Fais une synthèse courte de la sélection affichée." }
+];
 const MODES = { llm: "Qwen 3.5 local", modele_texte: "Réponse de repli (sans LLM)" };
 
 export function resumerContexte(c) {
@@ -50,10 +55,11 @@ export default function ChatDrawer({ onFermer }) {
   const cle = contexte?.page === "fiche_entreprise" ? contexte.entreprise.company_id : "liste";
   const messages = conversations[cle] ?? [];
   const resume = resumerContexte(contexte);
-  const viaApi = modeApi && contexte?.page === "fiche_entreprise";
-  const actions = viaApi ? ACTIONS_API : ACTIONS_RAPIDES;
+  const surFiche = contexte?.page === "fiche_entreprise";
+  const viaApi = modeApi; // API : les deux pages passent par l'assistant (Qwen), avec les données de l'écran jointes
+  const actions = !viaApi ? ACTIONS_RAPIDES : surFiche ? ACTIONS_API : ACTIONS_LISTE;
   const dernierMode = [...messages].reverse().find((m) => m.mode)?.mode;
-  const badge = viaApi ? (MODES[dernierMode] ?? "Assistant Basira") : modeApi ? "Calcul sur la liste affichée" : "Mode démo : réponses simulées";
+  const badge = viaApi ? (MODES[dernierMode] ?? "Assistant Basira") : "Mode démo : réponses simulées";
 
   useEffect(() => { finRef.current?.scrollIntoView({ block: "end" }); }, [messages.length, enCours]);
 
@@ -71,10 +77,11 @@ export default function ChatDrawer({ onFermer }) {
     setSaisie("");
     setEnCours(true);
     if (viaApi) {
-      // POST /api/assistant (contrat §6.2) : l'assistant lit la fiche, les preuves et le réseau par ses outils
+      // POST /api/assistant (contrat §6.2) : sur la fiche, l'assistant lit aussi la fiche, les preuves et le réseau
+      // par ses outils ; sur la liste (sans mf), il répond à partir des données affichées
       const historique = messages.map((m) => ({ role: m.role === "inspecteur" ? "user" : "assistant", contenu: m.texte }));
-      demanderAssistant({ mf: instantane.entreprise.mf, question, historique })
-        .then((r) => ajouter({ role: "copilote", texte: r.reponse, citations: r.citations ?? [], mode: r.mode }))
+      demanderAssistant({ mf: surFiche ? instantane.entreprise.mf : null, question, historique, contexte: instantane })
+        .then((r) => ajouter({ role: "copilote", texte: r.reponse, citations: r.citations ?? [], mode: r.mode, raison: r.raison_repli }))
         .catch((err) => ajouter({ role: "copilote", texte: `L'assistant est indisponible (${err.message}).`, mode: "erreur" }))
         .finally(() => setEnCours(false));
       return;
@@ -158,10 +165,10 @@ export default function ChatDrawer({ onFermer }) {
                 ))}
               </div>
             )}
-            {m.mode && m.mode !== "erreur" && <div className="text-[11px] text-attenue">{MODES[m.mode] ?? m.mode} · la décision appartient à l'inspecteur</div>}
+            {m.mode && m.mode !== "erreur" && <div className="text-[11px] text-attenue">{MODES[m.mode] ?? m.mode}{m.raison ? ` (motif : ${m.raison})` : ""} · la décision appartient à l'inspecteur</div>}
           </div>
         ))}
-        {enCours && <div className="text-[12.5px] text-attenue">Le copilote analyse les données affichées…</div>}
+        {enCours && <div className="text-[12.5px] text-attenue">{viaApi ? "Le copilote interroge Qwen et vérifie chaque chiffre (10 à 30 s)…" : "Le copilote analyse les données affichées…"}</div>}
         <div ref={finRef} />
       </div>
 

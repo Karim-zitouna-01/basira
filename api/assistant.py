@@ -28,9 +28,24 @@ Règles impératives :
    chaque nombre de ta réponse doit figurer tel quel dans les données des outils.
 3. Tu ne décides jamais. Tu peux rappeler l'action suggérée, mais la décision appartient à l'inspecteur.
 4. Si une information n'est pas dans les données, dis-le simplement.
-5. Termine ta réponse par une ligne « SOURCES : » suivie des codes de signaux (ex. COH_IMPORT_VS_CA) et des références de
+5. Termine ta réponse par une ligne « SOURCES : » suivie des codes de signaux (tels qu'ils figurent dans les données) et des références de
    preuves (ex. douane_articles:2026/401/0034567-001) que tu as utilisés, séparés par des virgules.
+6. Les montants sont en dinars tunisiens : écris « DT » (ou « MD » pour les millions), jamais une autre devise.
+7. Pour le réseau, respecte exactement le sens des relations décrit dans le champ « relations » (qui paie qui, qui est client).
+8. Si l'inspecteur demande une lettre, appelle rediger_lettre_demande_info et recopie la lettre intégralement, sans la résumer.
 """
+
+PROMPT_LISTE = """Tu es l'assistant de Basira, un outil d'aide au contrôle fiscal de l'administration tunisienne.
+L'inspecteur regarde la liste des entreprises de son portefeuille ; les données de son écran sont jointes en JSON.
+
+Règles impératives :
+1. Tu réponds en français, de façon brève et factuelle (5 à 10 lignes maximum).
+2. Tu t'appuies UNIQUEMENT sur les données jointes. Tu n'inventes jamais un chiffre, un nom ou une date.
+3. Tu ne décides jamais : tu aides l'inspecteur à choisir quels dossiers ouvrir en premier.
+4. Si une information n'est pas dans les données, dis-le simplement et invite à ouvrir la fiche de l'entreprise.
+5. Les montants sont en dinars tunisiens : écris « DT » (ou « MD » pour les millions), jamais une autre devise.
+"""
+TAILLE_MAX_PAGE = 6000  # caractères du contexte de page joints au prompt
 
 OUTILS = [
     {"type": "function", "function": {
@@ -74,10 +89,33 @@ def executer_outil(store: BaseStore, nom: str, args: dict, mf_defaut: str, mois_
         p["lignes"] = p.get("lignes", [])[:10]
         return p
     if nom == "get_reseau":
-        return store.reseau(mf, mois, 1)
+        return reseau_lisible(store, mf, mois)
     if nom == "rediger_lettre_demande_info":
         return {"lettre": modele_texte.lettre_demande_info(store.entreprise(mf, mois))["reponse"]}
     raise EchecLLM(f"outil inconnu : {nom}")
+
+
+_PHRASES_RELATION = {
+    "IMPORT_FOURNISSEUR": "{s} importe auprès du fournisseur étranger {c}",
+    "ACHAT_LOCAL_A5": "{s} (client) déclare en annexe V avoir payé {c} (fournisseur)",
+    "HONORAIRES_A2": "{s} a versé des honoraires ou loyers à {c}",
+    "PAIEMENT_PUBLIC": "l'acheteur public {s} a payé {c}",
+}
+
+
+def reseau_lisible(store: BaseStore, mf: str, mois: str) -> dict:
+    """Réseau à 1 saut, relations écrites en phrases (le sens source → cible est ambigu pour le modèle)."""
+    r = store.reseau(mf, mois, 1)
+    noeuds = {n["id"]: n for n in r["noeuds"]}
+    nom = lambda i: noeuds.get(i, {}).get("label", i)  # noqa: E731
+    relations = [{"relation": _PHRASES_RELATION.get(a["type_relation"], "{s} → {c}").format(s=nom(a["source"]), c=nom(a["cible"])),
+                  "montant_total_dt": a["montant"], "depuis": a["premiere_date"], "relation_recente": a["nouvelle"]}
+                 for a in sorted(r["aretes"], key=lambda a: -(a["montant"] or 0))]
+    centre = noeuds.get(mf, {})
+    return {"entreprise": centre.get("label", mf), "entreprise_profil_coquille": centre.get("est_coquille", False),
+            "contreparties": [{"nom": n["label"], "type": n["type"], "segment": n["segment"], "profil_coquille": n["est_coquille"]}
+                              for n in r["noeuds"] if n["id"] != mf],
+            "relations": relations}
 
 
 # ------------------------------------------------------------------ garde-fou sur les nombres
@@ -138,8 +176,18 @@ def _client(restant: float):
     return OpenAI(base_url=config.LLM_BASE_URL, api_key=config.LLM_API_KEY, timeout=max(1.0, restant), max_retries=0)
 
 
-def _messages_initiaux(mf: str, mois: str, question: str, historique: list[dict]) -> list[dict]:
-    msgs = [{"role": "system", "content": PROMPT_SYSTEME + f"\nEntreprise concernée : mf={mf}, mois={mois}."}]
+def _texte_page(page: dict | None) -> str:
+    """Ce que l'inspecteur voit à l'écran (filtres, période, indicateurs), tronqué."""
+    if not page:
+        return ""
+    return json.dumps(page, ensure_ascii=False, default=str)[:TAILLE_MAX_PAGE]
+
+
+def _messages_initiaux(mf: str, mois: str, question: str, historique: list[dict], page: dict | None = None) -> list[dict]:
+    systeme = PROMPT_SYSTEME + f"\nEntreprise concernée : mf={mf}, mois={mois}."
+    if page:
+        systeme += "\n\nCe que l'inspecteur voit à l'écran (JSON, période et filtres qu'il a choisis) :\n" + _texte_page(page)
+    msgs = [{"role": "system", "content": systeme}]
     for h in (historique or [])[-6:]:
         role = "assistant" if h.get("role") == "assistant" else "user"
         msgs.append({"role": role, "content": h.get("contenu", "")})
@@ -147,12 +195,12 @@ def _messages_initiaux(mf: str, mois: str, question: str, historique: list[dict]
     return msgs
 
 
-def repondre_llm(store: BaseStore, mf: str, mois: str, question: str, historique: list[dict]) -> dict:
+def repondre_llm(store: BaseStore, mf: str, mois: str, question: str, historique: list[dict], page: dict | None = None) -> dict:
     if not config.LLM_BASE_URL:
         raise EchecLLM("LLM_BASE_URL non défini")
     fin = time.monotonic() + config.LLM_TIMEOUT
-    msgs = _messages_initiaux(mf, mois, question, historique)
-    contexte: list[str] = []
+    msgs = _messages_initiaux(mf, mois, question, historique, page)
+    contexte: list[str] = [_texte_page(page)]  # les nombres affichés à l'écran sont aussi des données fondées
     citations_outils: list[dict] = []
 
     final = None
@@ -161,7 +209,7 @@ def repondre_llm(store: BaseStore, mf: str, mois: str, question: str, historique
             final = _boucle_outils(store, mf, mois, msgs, fin, contexte, citations_outils)
         except BadRequestError as e:  # serveur sans tool-calling (llama-server sans --jinja) → plan B
             log.warning("assistant : outils refusés par le serveur, plan B (%s)", e)
-            msgs, contexte[:], citations_outils[:] = _messages_initiaux(mf, mois, question, historique), [], []
+            msgs, contexte[:], citations_outils[:] = _messages_initiaux(mf, mois, question, historique, page), [_texte_page(page)], []
     if final is None:  # plan B : tout le contexte dans le prompt, sans outils
         d = store.entreprise(mf, mois)
         ctx = {"entreprise": _alleger_entreprise(d)}
@@ -183,7 +231,11 @@ def repondre_llm(store: BaseStore, mf: str, mois: str, question: str, historique
     if suspects:
         raise EchecLLM(f"nombres non fondés : {suspects[:5]}")
     vus, uniques = set(), []
+    donnees = "\n".join(contexte)
     for c in citations + citations_outils:
+        # une source citée doit apparaître dans les données consultées (le modèle recopie parfois un exemple)
+        if c["type"] != "source" and c.get("ref") and c["ref"] not in donnees:
+            continue
         if c.get("ref") and (c["type"], c["ref"]) not in vus:
             vus.add((c["type"], c["ref"]))
             uniques.append(c)
@@ -206,8 +258,8 @@ def _boucle_outils(store: BaseStore, mf: str, mois: str, msgs: list[dict], fin: 
     """Réponse finale, ou None si le modèle répond sans appeler d'outil (→ plan B)."""
     for _ in range(5):
         msg = _appel(msgs, fin, OUTILS).choices[0].message
-        if not msg.tool_calls:
-            return _sans_reflexion(msg.content) if contexte else None
+        if not msg.tool_calls:  # sans outil : acceptable seulement s'il y a des données (écran ou outils)
+            return _sans_reflexion(msg.content) if any(contexte) else None
         msgs.append({"role": "assistant", "content": msg.content or "",
                      "tool_calls": [{"id": tc.id, "type": "function", "function": {"name": tc.function.name, "arguments": tc.function.arguments}}
                                     for tc in msg.tool_calls]})
@@ -217,6 +269,8 @@ def _boucle_outils(store: BaseStore, mf: str, mois: str, msgs: list[dict], fin: 
                 res = executer_outil(store, tc.function.name, args, mf, mois)
                 if tc.function.name == "get_preuves":
                     citations_outils.append({"type": "signal", "ref": res.get("code_signal")})
+                elif tc.function.name == "get_reseau":
+                    citations_outils.append({"type": "source", "ref": "réseau (annexe V, douane, ADEB)"})
             except (Introuvable, EchecLLM, json.JSONDecodeError) as e:
                 res = {"erreur": str(e)}
             texte = json.dumps(res, ensure_ascii=False)
@@ -243,10 +297,54 @@ def repondre_modele_texte(store: BaseStore, mf: str, mois: str, question: str) -
     return modele_texte.repondre(question, detail, preuves_top, reseau)
 
 
-def repondre(store: BaseStore, mf: str, mois: str, question: str, historique: list[dict] | None = None) -> dict:
+def _raison(e: Exception) -> str:
+    """Motif de repli lisible par l'inspecteur (affiché dans l'interface)."""
+    nom = type(e).__name__
+    if isinstance(e, EchecLLM):
+        return str(e)
+    if "Timeout" in nom:
+        return "délai dépassé"
+    if "Connection" in nom:
+        return "LLM injoignable"
+    return f"erreur du LLM ({nom})"
+
+
+def repondre(store: BaseStore, mf: str | None, mois: str, question: str, historique: list[dict] | None = None,
+             page: dict | None = None) -> dict:
+    if not mf:
+        return repondre_liste(store, mois, question, historique or [], page)
     store.entreprise(mf, mois)  # lève Introuvable si l'entreprise n'existe pas
+    t0 = time.monotonic()
     try:
-        return repondre_llm(store, mf, mois, question, historique or [])
+        r = repondre_llm(store, mf, mois, question, historique or [], page)
+        log.info("assistant : réponse LLM en %.1f s", time.monotonic() - t0)
+        return r
     except Exception as e:  # repli systématique
-        log.warning("assistant : repli modele_texte (%s)", e)
-        return repondre_modele_texte(store, mf, mois, question)
+        log.warning("assistant : repli modele_texte après %.1f s (%s)", time.monotonic() - t0, e)
+        return {**repondre_modele_texte(store, mf, mois, question), "raison_repli": _raison(e)}
+
+
+# ------------------------------------------------------------------ liste des entreprises (pas d'entreprise précise)
+def repondre_liste(store: BaseStore, mois: str, question: str, historique: list[dict], page: dict | None) -> dict:
+    donnees = {"ecran": page or {}, "portefeuille": store.synthese(mois)}
+    texte = json.dumps(donnees, ensure_ascii=False, default=str)[:TAILLE_MAX_PAGE + 2000]
+    t0 = time.monotonic()
+    try:
+        if not config.LLM_BASE_URL:
+            raise EchecLLM("LLM_BASE_URL non défini")
+        fin = time.monotonic() + config.LLM_TIMEOUT
+        msgs = [{"role": "system", "content": PROMPT_LISTE + "\nDonnées (JSON) :\n" + texte}]
+        for h in historique[-6:]:
+            msgs.append({"role": "assistant" if h.get("role") == "assistant" else "user", "content": h.get("contenu", "")})
+        msgs.append({"role": "user", "content": question})
+        corps, _ = _extraire_sources(_sans_reflexion(_appel(msgs, fin).choices[0].message.content))
+        if not corps:
+            raise EchecLLM("réponse vide")
+        suspects = nombres_non_fondes(corps, texte)
+        if suspects:
+            raise EchecLLM(f"nombres non fondés : {suspects[:5]}")
+        log.info("assistant (liste) : réponse LLM en %.1f s", time.monotonic() - t0)
+        return {"reponse": corps, "citations": [], "mode": "llm"}
+    except Exception as e:
+        log.warning("assistant (liste) : repli après %.1f s (%s)", time.monotonic() - t0, e)
+        return {**modele_texte.resumer_liste(page or {}, donnees["portefeuille"]), "raison_repli": _raison(e)}

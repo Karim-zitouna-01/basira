@@ -53,10 +53,11 @@ class Message(BaseModel):
 
 
 class AssistantRequete(BaseModel):
-    mf: str
+    mf: str | None = None  # absent : question sur la liste des entreprises
     mois: str = config.MOIS_COURANT
     question: str = Field(min_length=1)
     historique: list[Message] = []
+    contexte: dict | None = None  # ce que la page affiche (filtres, période, indicateurs) : joint au prompt
 
 
 @app.get("/api/sante")
@@ -115,7 +116,7 @@ def decision(mf: str, req: DecisionRequete):
 @app.post("/api/assistant")
 def assistant_route(req: AssistantRequete):
     try:
-        return assistant.repondre(store, req.mf, req.mois, req.question, [m.model_dump() for m in req.historique])
+        return assistant.repondre(store, req.mf, req.mois, req.question, [m.model_dump() for m in req.historique], req.contexte)
     except Introuvable as e:
         _introuvable(e)
 

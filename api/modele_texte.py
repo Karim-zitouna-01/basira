@@ -157,3 +157,19 @@ def repondre(question: str, detail: dict, preuves_top: dict | None = None, resea
     if i == "reseau" and reseau is not None:
         return resumer_reseau(detail, reseau)
     return expliquer(detail, preuves_top)
+
+
+def resumer_liste(page: dict, synthese: dict) -> dict:
+    """Repli de la liste : synthèse du portefeuille et premières entreprises affichées (données de l'écran)."""
+    par = synthese.get("par_segment", {})
+    lignes = [f"Portefeuille au {synthese.get('mois', '')} : {synthese.get('nb_entreprises', 0)} entreprises, "
+              f"{par.get('PRIORITAIRE', 0)} prioritaires ({synthese.get('nouveaux_prioritaires_du_mois', 0)} nouvelles ce mois), "
+              f"{par.get('SURVEILLANCE', 0)} sous surveillance."]
+    affichees = page.get("entreprises_affichees") or []
+    if affichees:
+        lignes.append(f"Premières des {page.get('nb_affichees', len(affichees))} entreprises affichées :")
+        for e in affichees[:5]:
+            lignes.append(f"- {e.get('nom')} : score {e.get('score')} ({e.get('delta')}), {e.get('statut')}, "
+                          f"enjeu {fmt_dt(e.get('ecart_dt') or 0)}, {e.get('action')}.")
+    lignes.append("Ouvrez une fiche pour voir le détail du score et ses preuves.")
+    return {"reponse": "\n".join(lignes), "citations": [], "mode": "modele_texte"}

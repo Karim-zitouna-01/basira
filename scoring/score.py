@@ -4,6 +4,7 @@ score_sans_bonus = 100·σ(b0 + Σ w_i x_i) ; score_base = 100·σ(b0)
 points_i = (w_i x_i / Σ w_j x_j) × (score_sans_bonus − score_base)   → la somme des points = score − score_base
 bonus « nouveau schéma » (0–15) : ≥ 2 signaux très forts (valeur_norm ≥ 0.8) dont le poids appris est sous la médiane
 des poids positifs → bonus = min(15, 5 × n × moyenne de leurs valeur_norm), affiché comme contribution NOUVEAU_SCHEMA.
+score plafonné à 99 (config.SCORE_MAX) : un score de risque n'exprime jamais une certitude.
 plancher « preuve forte » : si un signal COH_* atteint valeur_norm ≥ 0.8, score_sans_bonus ≥ 70 (seuil PRIORITAIRE) ;
 les points ajoutés sont attribués à ce signal.
 """
@@ -49,11 +50,19 @@ def calculer(X: pd.DataFrame, modele: dict) -> pd.DataFrame:
     moy = np.where(n > 0, np.where(qual, Xv, 0).sum(axis=1) / np.maximum(n, 1), 0.0)
     bonus = np.where(n >= 2, np.minimum(config.BONUS_MAX, 5.0 * n * moy), 0.0)
 
+    # plafond SCORE_MAX (un score de risque n'exprime jamais une certitude) : le bonus est rogné d'abord,
+    # puis les points, proportionnellement, pour que leur somme reste = score − score_base
+    with np.errstate(invalid="ignore", divide="ignore"):
+        reduction = np.where(s_sans > config.SCORE_MAX, (config.SCORE_MAX - s_base) / (s_sans - s_base), 1.0)
+    pts = pts * reduction[:, None]
+    s_sans = np.minimum(s_sans, config.SCORE_MAX)
+    bonus = np.clip(np.minimum(bonus, config.SCORE_MAX - s_sans), 0.0, None)
+
     out = pd.DataFrame(index=X.index)
     out["score_sans_bonus"] = s_sans
     out["score_base"] = s_base
     out["bonus_nouveau_schema"] = bonus
-    out["score"] = np.minimum(100.0, s_sans + bonus)
+    out["score"] = s_sans + bonus
     for j, f in enumerate(config.FEATURES):
         out[f"pts_{f}"] = pts[:, j]
     # signal actif (hors combinaisons) pour la règle CONFIANCE
