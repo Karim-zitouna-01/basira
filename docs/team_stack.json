@@ -1,14 +1,19 @@
 {
   "confirmed_by_c_and_d": true,
+  "depot": "https://github.com/Karim-zitouna-01/basira",
   "models": [
-    {"name": "Régression logistique L2 à poids non négatifs (scikit-learn), 16 signaux + 2 combinaisons", "owner": "C", "pretrained": false, "status": "entraînée sur les contrôles passés synthétiques (data/scores/modele.json)"},
-    {"name": "Qwen 3.5 9B (poids ouverts)", "owner": "C", "pretrained": true, "status": "assistant de l'inspecteur, sans réentraînement ; servi en local par llama.cpp (llama-server, API compatible OpenAI) sur un PC du réseau local, aucune donnée ne sort"},
-    {"name": "Qwen (local, via llama-server)", "owner": "A", "pretrained": true, "status": "étape hors ligne facultative : vocabulaire des noms d'entreprises fictives (generation/vocab/llm_vocab.json) ; la génération des données n'appelle pas le modèle"}
+    {"name": "Régression logistique L2 à poids non négatifs (scikit-learn 1.9.1), 16 signaux + 2 combinaisons", "owner": "C", "pretrained": false, "status": "entraînée par l'équipe sur les contrôles passés synthétiques (data/scores/modele.json)"},
+    {"name": "Qwen 3.5 9B (Alibaba Qwen, poids ouverts, GGUF quantifié Q4_K_M)", "owner": "C", "pretrained": true, "status": "assistant de l'inspecteur, utilisé sans réentraînement ; servi en local par llama.cpp (llama-server, via l'application Locally Uncensored), API compatible OpenAI, sur un PC du réseau local : aucune donnée ne sort"},
+    {"name": "Qwen (même serveur local)", "owner": "A", "pretrained": true, "status": "étape hors ligne facultative : vocabulaire des noms d'entreprises fictives ; la génération des données n'appelle pas le modèle"}
   ],
   "libraries": {
-    "A (données synthétiques)": ["numpy", "pandas", "networkx", "vis-network (explorateur du graphe hors ligne)"],
-    "B (signaux)": ["numpy", "pandas", "pyarrow", "reportlab"],
-    "C (score, API, assistant)": ["scikit-learn", "FastAPI", "Uvicorn", "Pydantic", "client openai (API compatible OpenAI)"],
-    "D (interface)": ["React 19", "Vite", "Mantine", "Tailwind CSS", "React Flow (@xyflow/react)", "dagre", "dc.js", "Crossfilter", "D3", "react-markdown", "lucide-react", "React Bits (animation LatticeLoader)", "polices IBM Plex Mono et Public Sans"]
-  }
+    "Python 3.13 (uv)": ["numpy 2.5.3", "pandas 3.0.6", "pyarrow 25.0.1", "scikit-learn 1.9.1", "networkx 3.7", "FastAPI 0.141.1", "Uvicorn 0.54.0", "Pydantic 2.13.5", "openai 3.19.2 (client)", "ReportLab 5.0.1", "pytest 9.1.1"],
+    "Web (Node 22)": ["React 19.3", "Vite 8.3", "Mantine 9.6", "Tailwind CSS 4.3", "React Flow (@xyflow/react) 12.12", "dagre 3.1", "dc.js 4.2", "Crossfilter 1.5", "D3 7.9", "react-markdown 10.1", "React Router 7.18", "lucide-react 1.48"]
+  },
+  "ressources_externes": [
+    "React Bits (reactbits.dev) : composant d'animation LatticeLoader, copié puis adapté (web/src/components/LatticeLoader)",
+    "vis-network : bibliothèque embarquée dans l'explorateur hors ligne du graphe (generation/assets)",
+    "polices IBM Plex Mono et Public Sans (Fontsource, licence SIL OFL)",
+    "diagrams.net (draw.io) pour le schéma d'architecture ; Playwright pour les tests d'interface"
+  ]
 }

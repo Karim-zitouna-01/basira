@@ -64,7 +64,8 @@ def generate_report(data_dir, output, stack_path, final=False):
     story.append(Paragraph("BASIRA — Note de synthèse", styles["TitreFR"]))
     story.append(Paragraph(
         "Défi principal <b>T20 — Risk scoring dynamique de la conformité des entreprises</b> · défi complémentaire T7 "
-        "(croisement des données fiscales, douanières et de paiement). Hackathon « IA &amp; Finances publiques », septembre 2026.",
+        "(croisement des données fiscales, douanières et de paiement). Hackathon « IA &amp; Finances publiques », septembre 2026."
+        + (f"<br/>Code source : <link href=\"{escape(stack['depot'])}\" color=\"#174a7e\">{escape(stack['depot'])}</link>" if stack.get("depot") else ""),
         styles["SousTitreFR"]))
     if not final:
         paragraph("<b>Version de travail.</b> Les résultats d'impact et l'inventaire final restent à compléter s'ils ne sont pas "
@@ -88,6 +89,11 @@ def generate_report(data_dir, output, stack_path, final=False):
         "de marge, sociétés coquilles) et des témoins trompeurs (croissance légitime, citoyens modèles, sosies sans fraude). "
         "La vérité terrain n'est lue que par l'évaluation, jamais par l'entraînement ni pour fixer un seuil. Un calcul à fin M "
         "ne lit que ce qui était disponible à cette date (déclaration de M connue en M+1, annexes de l'exercice N en mars N+1)."
+    )
+    paragraph(
+        "<b>Conformité (loi organique n° 2004-63, INPDP).</b> Aucune donnée réelle, personnelle ou confidentielle n'est utilisée ni "
+        "requise, et aucun système de l'administration n'est sollicité : identifiants, raisons sociales et montants sont fictifs. "
+        "Les données et l'assistant restent sur le réseau local ; aucune donnée n'est envoyée à un service en ligne."
     )
 
     heading("3. Approche IA")
@@ -113,8 +119,10 @@ def generate_report(data_dir, output, stack_path, final=False):
         "signalement à la douane)."
     )
     puce(
-        "<b>Assistant</b> : Qwen 3.5 9B hébergé en local, 4 outils (dossier, preuves, réseau, lettre de demande d'information). "
-        "Tout chiffre de la réponse doit provenir des outils, sinon Basira renvoie une réponse déterministe ; l'assistant ne décide jamais."
+        "<b>Assistant</b> : Qwen 3.5 9B hébergé en local, 6 outils (dossier, preuves, réseau, lettre de demande d'information, "
+        "liens d'une contrepartie, chemin vers une entreprise redressée). Les outils de réseau mettent à jour le graphe de l'écran "
+        "en direct, avant la réponse écrite ; le graphe ne montre que des relations déclarées. Tout chiffre de la réponse doit "
+        "provenir des outils, sinon Basira renvoie une réponse déterministe ; l'assistant ne décide jamais."
     )
     k = boucle.get("decisions_ajoutees") if boucle else None
     puce(
@@ -182,17 +190,20 @@ def generate_report(data_dir, output, stack_path, final=False):
     puce("L'enjeu est une estimation (données annuelles, double compte possible clients/ADEB, taux de prototype à valider). "
          "Le référentiel d'activités n'est pas unifié entre administrations ; SAR et SADEC 2 ne sont connus que par la conférence.")
 
-    heading("6. Modèles, bibliothèques et API tierces")
+    heading("6. Modèles, bibliothèques, API tierces et ressources citées")
     for model in stack.get("models", []):
         puce(escape(f"{model['owner']} — {model['name']} ; pré-entraîné : {'oui' if model['pretrained'] else 'non'} ; {model['status']}."))
     paragraph(escape(" · ".join(f"{owner} : {', '.join(libs)}" for owner, libs in stack.get("libraries", {}).items()))
               + ". Aucune API externe ni service en ligne : tout fonctionne hors connexion.")
+    if stack.get("ressources_externes"):
+        paragraph("<b>Code et ressources externes cités :</b> " + escape(" ; ".join(stack["ressources_externes"])) + ".")
 
     heading("7. Recommandations pour une mise en production")
     paragraph(
         "Brancher les sources au data lake SADEC 2 et à SINDA en conservant les dates de disponibilité ; unifier identifiants et "
         "référentiel d'activités ; valider les signaux et l'enjeu avec les métiers. Héberger données et assistant dans le périmètre "
-        "de l'administration, avec habilitations, journalisation, minimisation et examen loi 2004-63 / INPDP. Réentraîner sur les "
+        "de l'administration, avec habilitations, journalisation et minimisation ; avant tout traitement de données réelles, analyse "
+        "d'impact et formalités auprès de l'INPDP (loi organique n° 2004-63). Réentraîner sur les "
         "résultats réels et les décisions des inspecteurs, suivre les biais par secteur, taille et région, et garder la décision humaine."
     )
 
