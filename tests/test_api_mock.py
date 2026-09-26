@@ -76,8 +76,17 @@ def test_decision_aller_retour():
                                       "Quels fournisseurs posent problème ?"])
 def test_assistant_modele_texte(question):
     r = c.post("/api/assistant", json={"mf": ALPHA, "mois": "2026-08", "question": question, "historique": []}).json()
-    assert set(r) == {"reponse", "citations", "mode"}
+    assert set(r) == {"reponse", "citations", "mode", "raison_repli"}  # raison_repli : ajout au contrat (motif du repli)
     assert r["mode"] == "modele_texte" and r["reponse"] and r["citations"]
+    assert r["raison_repli"] == "LLM_BASE_URL non défini"
+
+
+def test_assistant_liste_sans_llm():
+    r = c.post("/api/assistant", json={"question": "Quels dossiers ouvrir en premier ?",
+                                       "contexte": {"page": "liste", "nb_affichees": 1, "entreprises_affichees": [
+                                           {"nom": "Alpha SARL", "score": 76, "delta": "+48", "statut": "Haut Risque", "ecart_dt": 420000,
+                                            "action": "Vérification approfondie"}]}}).json()
+    assert r["mode"] == "modele_texte" and "Alpha SARL" in r["reponse"]
 
 
 def test_assistant_pourquoi_alpha():
