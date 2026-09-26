@@ -9,6 +9,7 @@ import * as d3 from "d3";
 import crossfilter from "crossfilter2";
 import * as dc from "dc";
 import "../lib/dcCompat.js";
+import { Card, Group, Text, ThemeIcon } from "@mantine/core";
 import { AlertTriangle, Gauge, History, ListChecks, Network, Scale, Waypoints } from "lucide-react";
 import { SOURCES, SEGMENTS, jeton } from "../lib/palettes.js";
 import { meta, modeApi } from "../lib/donnees.js";
@@ -24,16 +25,17 @@ const echapper = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;
 
 function Carte({ titre, icone: Icone, aide, actions, children, className = "" }) {
   return (
-    <section className={`flex min-w-0 flex-col gap-2 rounded-xl border border-bordure bg-carte p-4 ${className}`}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="flex items-center gap-2 text-[13.5px] font-semibold text-encre">
-          {Icone && <Icone size={14} className="text-attenue" aria-hidden="true" />}{titre}
-        </h3>
+    <Card component="section" className={`flex min-w-0 flex-col gap-2 ${className}`}>
+      <Group justify="space-between" gap="xs" wrap="wrap">
+        <Group gap={8} wrap="nowrap">
+          {Icone && <ThemeIcon variant="light" color="ardoise" size={28} radius="md"><Icone size={15} /></ThemeIcon>}
+          <Text component="h3" fw={700} size="md">{titre}</Text>
+        </Group>
         {actions}
-      </div>
-      {aide && <p className="-mt-1 text-[12px] text-attenue">{aide}</p>}
+      </Group>
+      {aide && <Text size="xs" c="dimmed">{aide}</Text>}
       {children}
-    </section>
+    </Card>
   );
 }
 

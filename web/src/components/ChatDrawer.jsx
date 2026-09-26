@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { ActionIcon, Anchor, Badge, Button, Group, Stack, Text, Textarea, ThemeIcon, Tooltip } from "@mantine/core";
 import { ArrowUp, Eye, History, Sparkles, X } from "lucide-react";
 import { useContextePage } from "../lib/contextePage.jsx";
 import { demanderAssistant, meta, modeApi } from "../lib/donnees.js";
@@ -68,13 +69,12 @@ function Reponse({ m }) {
         )}
         {repli && m.raison && <span className="text-[11.5px] text-attenue">{m.raison}</span>}
         {visibles.map((c) => (
-          <span key={`${c.type}:${c.ref}`} title={c.ref}
-            className="max-w-[210px] truncate rounded-full border border-bordure px-2 py-0.5 text-[11px] text-encre-2">
-            {libelleCitation(c)}
-          </span>
+          <Tooltip key={`${c.type}:${c.ref}`} label={c.ref}>
+            <Badge variant="default" size="sm" radius="xl" maw={220} fw={500} className="cursor-help">{libelleCitation(c)}</Badge>
+          </Tooltip>
         ))}
         {citations.length > 3 && !toutes && (
-          <button type="button" onClick={() => setToutes(true)} className="text-[11px] font-semibold text-action-texte">+{citations.length - 3}</button>
+          <Anchor size="xs" fw={600} onClick={() => setToutes(true)}>+{citations.length - 3}</Anchor>
         )}
       </div>
     </div>
@@ -137,22 +137,21 @@ export default function ChatDrawer({ onFermer }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between gap-2 border-b border-bordure px-4 py-2.5">
-        <div className="flex min-w-0 items-center gap-2">
-          <h2 className="text-[14px] font-bold text-encre">Copilote</h2>
-          <span className="inline-flex items-center gap-1.5 text-[11.5px] text-attenue"
-            title={viaApi ? "Qwen 3.5 9B, servi sur le réseau local : aucune donnée ne sort" : "Réponses simulées (jeu fictif)"}>
-            <span className="size-1.5 rounded-full" style={{ background: enLigne ? "var(--seg-conf)" : "var(--seg-surv)" }} />
-            {viaApi ? "Qwen 3.5 · local" : "Démo"}
-          </span>
-        </div>
-        <div className="flex items-center gap-0.5">
-          <button type="button" onClick={() => setHistoriqueOuvert((o) => !o)} aria-expanded={historiqueOuvert} title="Sessions précédentes"
-            className="grid size-7 place-items-center rounded-md text-attenue hover:bg-fond-2 hover:text-encre"><History size={15} /></button>
-          <button type="button" onClick={onFermer} aria-label="Fermer le copilote" title="Fermer"
-            className="grid size-7 place-items-center rounded-md text-attenue hover:bg-fond-2 hover:text-encre"><X size={16} /></button>
-        </div>
-      </div>
+      <Group justify="space-between" gap="xs" px="md" py={10} className="border-b border-bordure" wrap="nowrap">
+        <Group gap={8} wrap="nowrap">
+          <ThemeIcon variant="light" size={28} radius="md"><Sparkles size={15} /></ThemeIcon>
+          <Text fw={700} size="md">Copilote</Text>
+          <Tooltip label={viaApi ? "Qwen 3.5 9B, servi sur le réseau local : aucune donnée ne sort" : "Réponses simulées (jeu fictif)"}>
+            <Badge variant="dot" color={enLigne ? "teal" : "orange"} size="sm" fw={500}>{viaApi ? "Qwen 3.5 · local" : "Démo"}</Badge>
+          </Tooltip>
+        </Group>
+        <Group gap={2} wrap="nowrap">
+          <Tooltip label="Sessions précédentes">
+            <ActionIcon onClick={() => setHistoriqueOuvert((o) => !o)} aria-expanded={historiqueOuvert} aria-label="Sessions précédentes"><History size={16} /></ActionIcon>
+          </Tooltip>
+          <Tooltip label="Fermer"><ActionIcon onClick={onFermer} aria-label="Fermer le copilote"><X size={17} /></ActionIcon></Tooltip>
+        </Group>
+      </Group>
 
       {/* Ce que le copilote voit : une ligne discrète, détail à la demande */}
       <div className="border-b border-bordure px-4 py-1.5">
@@ -190,18 +189,18 @@ export default function ChatDrawer({ onFermer }) {
         {!messages.length && (
           <div className="flex flex-1 flex-col justify-center gap-4">
             <div className="flex flex-col items-center gap-2 text-center">
-              <span className="grid size-9 place-items-center rounded-full bg-fond-2 text-action-texte"><Sparkles size={17} aria-hidden="true" /></span>
-              <p className="text-[15px] font-semibold text-encre">Que voulez-vous comprendre ?</p>
-              <p className="max-w-[32ch] text-[12px] text-attenue">Chaque chiffre de la réponse est vérifié dans les données. La décision reste la vôtre.</p>
+              <ThemeIcon variant="light" size={40} radius="xl"><Sparkles size={19} /></ThemeIcon>
+              <Text fw={700} size="lg">Que voulez-vous comprendre ?</Text>
+              <Text size="sm" c="dimmed" maw={300}>Chaque chiffre de la réponse est vérifié dans les données. La décision reste la vôtre.</Text>
             </div>
-            <div className="flex flex-col gap-1.5">
+            <Stack gap={6}>
               {actions.map((a) => (
-                <button key={a.intention} type="button" onClick={() => envoyer(a.question ?? a.libelle, a.intention)}
-                  className="rounded-lg border border-bordure bg-carte px-3 py-2 text-left text-[12.5px] text-encre-2 hover:border-attenue hover:text-encre">
+                <Button key={a.intention} variant="default" justify="space-between" fw={500} rightSection={<ArrowUp size={14} className="rotate-45 text-attenue" />}
+                  onClick={() => envoyer(a.question ?? a.libelle, a.intention)}>
                   {a.libelle}
-                </button>
+                </Button>
               ))}
-            </div>
+            </Stack>
           </div>
         )}
         {messages.map((m, i) => m.role === "inspecteur" ? (
@@ -220,22 +219,22 @@ export default function ChatDrawer({ onFermer }) {
         {messages.length > 0 && (
           <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5 [scrollbar-width:none]">
             {actions.map((a) => (
-              <button key={a.intention} type="button" disabled={enCours} onClick={() => envoyer(a.question ?? a.libelle, a.intention)}
-                className="shrink-0 rounded-full border border-bordure bg-carte px-2.5 py-1 text-[11.5px] text-encre-2 hover:border-attenue disabled:opacity-50">
+              <Button key={a.intention} variant="default" size="compact-xs" radius="xl" fw={500} className="shrink-0" disabled={enCours}
+                onClick={() => envoyer(a.question ?? a.libelle, a.intention)}>
                 {a.libelle}
-              </button>
+              </Button>
             ))}
           </div>
         )}
-        <form className="flex items-end gap-2 rounded-xl border border-bordure bg-carte py-1.5 pl-3 pr-1.5 focus-within:border-attenue"
-          onSubmit={(e) => { e.preventDefault(); envoyer(saisie); }}>
-          <label htmlFor="question" className="sr-only">Question au copilote</label>
-          <textarea id="question" rows={1} value={saisie} onChange={(e) => setSaisie(e.target.value)}
+        <form onSubmit={(e) => { e.preventDefault(); envoyer(saisie); }}>
+          <Textarea autosize minRows={1} maxRows={5} radius="lg" value={saisie} onChange={(e) => setSaisie(e.currentTarget.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); envoyer(saisie); } }}
-            placeholder="Posez une question…"
-            className="max-h-32 min-w-0 flex-1 resize-none bg-transparent py-1 text-[13px] outline-none [field-sizing:content] placeholder:text-attenue" />
-          <button type="submit" disabled={enCours || !saisie.trim()} aria-label="Envoyer la question"
-            className="grid size-7 shrink-0 place-items-center rounded-lg bg-action text-action-encre disabled:opacity-30"><ArrowUp size={15} /></button>
+            placeholder="Posez une question…" aria-label="Question au copilote" rightSectionWidth={42}
+            rightSection={
+              <ActionIcon type="submit" variant="filled" color="basira" radius="md" disabled={enCours || !saisie.trim()} aria-label="Envoyer la question">
+                <ArrowUp size={15} />
+              </ActionIcon>
+            } />
         </form>
       </div>
     </div>

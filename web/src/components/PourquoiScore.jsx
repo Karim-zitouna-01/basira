@@ -1,14 +1,15 @@
 // « Pourquoi ce score ? » (contrat §6, fiche entreprise) : contributions de chaque signal en points, phrase
 // vérifiable, lignes brutes à l'appui (preuves), position face aux pairs, et décision de l'inspecteur.
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Gavel, Lightbulb, Users } from "lucide-react";
+import { Alert, Badge, Button, Card, Collapse, Group, Loader, Progress, Select, Stack, Table, Text, Textarea, ThemeIcon, Timeline, Tooltip } from "@mantine/core";
+import { ChevronDown, ChevronRight, FileSearch, Gavel, Lightbulb, Users } from "lucide-react";
 import { chargerPreuves, enregistrerDecision, oublierFiche } from "../lib/donnees.js";
 import { fmtCompact, fmtDT, fmtDate } from "../lib/format.js";
 import { LIBELLES_SOURCES, nettoyerFait } from "../lib/signaux.js";
 
 const LENTILLES = {
-  COHERENCE: ["Cohérence entre sources", "var(--seg-prio)"], CHANGEMENT: ["Changement de comportement", "var(--seg-surv)"],
-  PAIRS: ["Comparaison aux pairs", "var(--action)"], RESEAU: ["Réseau", "var(--src-tj)"], COMBINAISON: ["Combinaison", "var(--encre-2)"]
+  COHERENCE: ["Cohérence entre sources", "red"], CHANGEMENT: ["Changement de comportement", "orange"],
+  PAIRS: ["Comparaison aux pairs", "basira"], RESEAU: ["Réseau", "teal"], COMBINAISON: ["Combinaison", "ardoise"]
 };
 const DECISIONS = {
   AUCUNE: "Aucune action", RELANCE: "Relance de conformité", DEMANDE_INFO: "Demande d'information",
@@ -20,17 +21,15 @@ const pts = (v) => `${v >= 0 ? "+" : ""}${nombre(v)}`;
 const estMontant = (nom) => /CA par salarié/.test(nom);
 const fmtIndicateur = (nom, v) => (v === null || v === undefined ? "—" : estMontant(nom) ? fmtCompact(v) : `${Math.round(v * 100)} %`);
 
-function Carte({ titre, icone: Icone, droite, children, className = "" }) {
+function EnTete({ titre, icone: Icone, droite }) {
   return (
-    <section className={`flex min-w-0 flex-col gap-3 rounded-xl border border-bordure bg-carte p-4 ${className}`}>
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-encre">
-          <Icone size={14} className="text-attenue" aria-hidden="true" />{titre}
-        </h2>
-        {droite}
-      </div>
-      {children}
-    </section>
+    <Group justify="space-between" align="center" mb="sm" wrap="nowrap">
+      <Group gap={8} wrap="nowrap">
+        <ThemeIcon variant="light" color="ardoise" size={28} radius="md"><Icone size={15} /></ThemeIcon>
+        <Text fw={700} size="md">{titre}</Text>
+      </Group>
+      {droite}
+    </Group>
   );
 }
 
@@ -45,67 +44,70 @@ function Preuves({ mf, code, nb }) {
   const lignes = etat.donnees?.lignes ?? [];
   return (
     <>
-      <button type="button" onClick={basculer} aria-expanded={etat.ouvert}
-        className="inline-flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[12px] font-semibold text-action-texte hover:underline">
-        {etat.ouvert ? <ChevronDown size={13} /> : <ChevronRight size={13} />}Preuves ({nb})
-      </button>
-      {etat.ouvert && (
-        <div className="mt-1 max-h-[240px] w-full basis-full overflow-auto rounded-lg border border-bordure">
-          {etat.erreur && <p className="p-3 text-[12px] text-prio-texte">Preuves indisponibles : {etat.erreur}</p>}
-          {!etat.erreur && !etat.donnees && <p className="p-3 text-[12px] text-attenue">Chargement…</p>}
+      <Button variant="subtle" size="compact-xs" onClick={basculer} aria-expanded={etat.ouvert}
+        leftSection={etat.ouvert ? <ChevronDown size={13} /> : <ChevronRight size={13} />}>
+        {nb} preuve{nb > 1 ? "s" : ""}
+      </Button>
+      <Collapse expanded={etat.ouvert} className="w-full basis-full">
+        <div className="mt-2 max-h-[260px] overflow-auto rounded-md border border-bordure">
+          {etat.erreur && <Alert color="red" variant="light" m="xs">Preuves indisponibles : {etat.erreur}</Alert>}
+          {!etat.erreur && !etat.donnees && <Group p="sm"><Loader size="xs" /><Text size="xs" c="dimmed">Chargement des pièces…</Text></Group>}
           {etat.donnees && (
-            <table className="w-full border-collapse text-[12px]">
-              <tbody>
+            <Table fz="xs" verticalSpacing={6} horizontalSpacing="sm" highlightOnHover={false} stickyHeader>
+              <Table.Thead><Table.Tr><Table.Th>Date</Table.Th><Table.Th>Pièce</Table.Th><Table.Th ta="right">Montant</Table.Th></Table.Tr></Table.Thead>
+              <Table.Tbody>
                 {lignes.map((l) => {
                   const sousEvalue = l.champs?.prix_reference_tnd && l.champs.prix_unitaire_tnd < 0.9 * l.champs.prix_reference_tnd;
                   return (
-                    <tr key={`${l.source}:${l.ref}`} className="border-t border-bordure align-top first:border-t-0">
-                      <td className="chiffres whitespace-nowrap px-2.5 py-1.5 text-attenue">{fmtDate(l.date)}</td>
-                      <td className="px-2.5 py-1.5">
-                        <span className="text-encre">{l.libelle}</span>
-                        <span className="block text-[11px] text-attenue" title={l.ref}>
+                    <Table.Tr key={`${l.source}:${l.ref}`}>
+                      <Table.Td className="chiffres whitespace-nowrap align-top text-attenue">{fmtDate(l.date)}</Table.Td>
+                      <Table.Td className="align-top">
+                        <Text size="xs">{l.libelle}</Text>
+                        <Text size="xs" c="dimmed" title={l.ref}>
                           {LIBELLES_SOURCES[l.source] ?? l.source}
                           {l.champs?.prix_reference_tnd && (
-                            <span className={sousEvalue ? "font-semibold text-prio-texte" : ""}>
+                            <Text span size="xs" c={sousEvalue ? "red.7" : "dimmed"} fw={sousEvalue ? 700 : 400}>
                               {" "}· prix {fmtDT(l.champs.prix_unitaire_tnd)} pour une référence de {fmtDT(l.champs.prix_reference_tnd)}
-                            </span>
+                            </Text>
                           )}
-                        </span>
-                      </td>
-                      <td className="chiffres whitespace-nowrap px-2.5 py-1.5 text-right text-encre">{l.montant === null ? "—" : fmtDT(l.montant)}</td>
-                    </tr>
+                        </Text>
+                      </Table.Td>
+                      <Table.Td className="chiffres whitespace-nowrap text-right align-top">{l.montant === null ? "—" : fmtDT(l.montant)}</Table.Td>
+                    </Table.Tr>
                   );
                 })}
-                {!lignes.length && <tr><td className="p-3 text-attenue">Aucune ligne brute rattachée à ce signal.</td></tr>}
-              </tbody>
-            </table>
+                {!lignes.length && <Table.Tr><Table.Td colSpan={3}><Text size="xs" c="dimmed">Aucune ligne brute rattachée à ce signal.</Text></Table.Td></Table.Tr>}
+              </Table.Tbody>
+            </Table>
           )}
         </div>
-      )}
+      </Collapse>
     </>
   );
 }
 
 function Contribution({ mf, c, max }) {
-  const [lentille, couleur] = LENTILLES[c.lentille] ?? [c.lentille, "var(--attenue)"];
+  const [lentille, couleur] = LENTILLES[c.lentille] ?? [c.lentille, "ardoise"];
   const fait = nettoyerFait(c.fait_fr);
   return (
-    <li className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-4 gap-y-1 py-3 first:pt-0 last:pb-0">
-      <div className="flex min-w-0 items-baseline gap-2">
-        <span className="mt-1 size-2 shrink-0 self-start rounded-full" style={{ background: couleur }} title={lentille} />
-        <span className="truncate text-[13px] font-semibold text-encre" title={`${c.libelle} · ${c.code_signal}`}>{c.libelle}</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="hidden h-1.5 w-20 overflow-hidden rounded-full bg-fond-2 sm:block">
-          <span className="block h-full rounded-full" style={{ width: `${(100 * Math.max(0, c.points)) / max}%`, background: couleur }} />
-        </span>
-        <span className="chiffres w-[62px] text-right text-[13px] font-bold text-encre">{pts(c.points)} pts</span>
-      </div>
-      <div className="col-span-full flex min-w-0 flex-wrap items-baseline gap-x-3 pl-4">
-        {fait && <p className="min-w-0 flex-1 text-[12.5px] leading-snug text-encre-2">{fait}</p>}
+    <div className="py-3 first:pt-0 last:pb-0">
+      <Group justify="space-between" wrap="nowrap" gap="md">
+        <Group gap={8} wrap="nowrap" className="min-w-0">
+          <Tooltip label={`${lentille} · ${c.code_signal}`}>
+            <span className="size-2.5 shrink-0 rounded-full" style={{ background: `var(--mantine-color-${couleur}-6)` }} />
+          </Tooltip>
+          <Text size="sm" fw={600} truncate>{c.libelle}</Text>
+        </Group>
+        <Group gap={10} wrap="nowrap">
+          <Progress value={(100 * Math.max(0, c.points)) / max} color={couleur} size="sm" w={90} radius="xl" className="hidden @xl:block" />
+          <Text size="sm" fw={700} className="chiffres w-[64px] text-right">{pts(c.points)} pts</Text>
+        </Group>
+      </Group>
+      <Group gap="xs" mt={4} pl={18} wrap="wrap" align="baseline">
+        {fait && <Text size="sm" c="dimmed" lh={1.45} className="min-w-0 flex-1">{fait}</Text>}
         {c.nb_preuves > 0 && <Preuves mf={mf} code={c.code_signal} nb={c.nb_preuves} />}
-      </div>
-    </li>
+      </Group>
+    </div>
   );
 }
 
@@ -129,34 +131,29 @@ function Decision({ mf, suggeree, initiales }) {
     );
   };
   return (
-    <Carte titre="Décision" icone={Gavel}>
-      <form onSubmit={envoyer} className="flex flex-col gap-2">
-        <label className="sr-only" htmlFor="decision">Décision</label>
-        <select id="decision" value={decision} onChange={(e) => setDecision(e.target.value)}
-          className="w-full rounded-md border border-bordure bg-carte px-2 py-1.5 text-[13px] text-encre">
-          {Object.entries(DECISIONS).map(([k, v]) => <option key={k} value={k}>{v}{k === suggeree ? " (suggérée)" : ""}</option>)}
-        </select>
-        <label className="sr-only" htmlFor="justification">Justification</label>
-        <textarea id="justification" rows={2} value={justification} onChange={(e) => setJustification(e.target.value)} placeholder="Justification (obligatoire)"
-          className="resize-none rounded-md border border-bordure bg-carte px-2 py-1.5 text-[13px] text-encre placeholder:text-attenue" />
-        <button type="submit" disabled={etat.envoi || !justification.trim()}
-          className="rounded-md bg-action px-3 py-1.5 text-[13px] font-semibold text-action-encre disabled:opacity-40">
-          {etat.envoi ? "Enregistrement…" : "Enregistrer"}
-        </button>
-        {etat.erreur && <p className="text-[12px] text-prio-texte">Échec : {etat.erreur}</p>}
+    <Card>
+      <EnTete titre="Décision" icone={Gavel} />
+      <form onSubmit={envoyer}>
+        <Stack gap="xs">
+          <Select label="Décision" description={`Suggérée par Basira : ${DECISIONS[suggeree]}`} size="sm" value={decision} onChange={(v) => v && setDecision(v)} allowDeselect={false}
+            data={Object.entries(DECISIONS).map(([k, v]) => ({ value: k, label: v }))} />
+          <Textarea label="Justification" size="sm" autosize minRows={2} maxRows={5} value={justification}
+            onChange={(e) => setJustification(e.currentTarget.value)} placeholder="Motif de la décision (obligatoire)" />
+          <Button type="submit" loading={etat.envoi} disabled={!justification.trim()}>Enregistrer la décision</Button>
+          {etat.erreur && <Alert color="red" variant="light" p="xs">Échec : {etat.erreur}</Alert>}
+          <Text size="xs" c="dimmed">Basira propose, l'inspecteur décide.</Text>
+        </Stack>
       </form>
-      <p className="text-[11.5px] text-attenue">Basira propose, l'inspecteur décide.</p>
       {historique.length > 0 && (
-        <ol className="flex flex-col gap-1.5 border-t border-bordure pt-2">
+        <Timeline mt="md" bulletSize={14} lineWidth={2} active={historique.length}>
           {[...historique].reverse().map((d) => (
-            <li key={d.id_decision} className="text-[12px] text-encre-2">
-              <span className="chiffres text-attenue">{fmtDate(d.date_heure)}</span> · <strong className="text-encre">{DECISIONS[d.decision] ?? d.decision}</strong>
-              <span className="block text-attenue">{d.justification}</span>
-            </li>
+            <Timeline.Item key={d.id_decision} title={<Text size="sm" fw={600}>{DECISIONS[d.decision] ?? d.decision}</Text>}>
+              <Text size="xs" c="dimmed">{fmtDate(d.date_heure)} · {d.justification}</Text>
+            </Timeline.Item>
           ))}
-        </ol>
+        </Timeline>
       )}
-    </Carte>
+    </Card>
   );
 }
 
@@ -170,20 +167,22 @@ function Jauge({ i }) {
   const x = (val) => `${(100 * (val - lo)) / (hi - lo)}%`;
   const hors = v !== null && v !== undefined && (v < i.p10 || v > i.p90);
   return (
-    <li className="flex flex-col gap-1">
-      <div className="flex items-baseline justify-between gap-2 text-[12.5px]">
-        <span className="truncate text-encre-2">{i.nom}</span>
-        <strong className={`chiffres ${hors ? "text-prio-texte" : "text-encre"}`}>{fmtIndicateur(i.nom, v)}</strong>
-      </div>
-      <div className="relative h-2 rounded-full bg-fond-2" title={`Pairs : médiane ${fmtIndicateur(i.nom, i.mediane_pairs)}, P10–P90 ${fmtIndicateur(i.nom, i.p10)} – ${fmtIndicateur(i.nom, i.p90)}`}>
-        {i.p10 !== null && i.p90 !== null && <span className="absolute inset-y-0 rounded-full bg-bordure" style={{ left: x(i.p10), width: `calc(${x(i.p90)} - ${x(i.p10)})` }} />}
-        {i.mediane_pairs !== null && <span className="absolute -inset-y-0.5 w-0.5 bg-attenue" style={{ left: x(i.mediane_pairs) }} />}
-        {v !== null && v !== undefined && (
-          <span className="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-carte"
-            style={{ left: x(v), background: hors ? "var(--seg-prio)" : "var(--encre)" }} />
-        )}
-      </div>
-    </li>
+    <div>
+      <Group justify="space-between" gap="xs" wrap="nowrap" mb={6}>
+        <Text size="sm" c="dimmed" truncate>{i.nom}</Text>
+        <Text size="sm" fw={700} c={hors ? "red.7" : undefined} className="chiffres">{fmtIndicateur(i.nom, v)}</Text>
+      </Group>
+      <Tooltip label={`Pairs : médiane ${fmtIndicateur(i.nom, i.mediane_pairs)}, 80 % entre ${fmtIndicateur(i.nom, i.p10)} et ${fmtIndicateur(i.nom, i.p90)}`}>
+        <div className="relative h-2 rounded-full bg-fond-2">
+          {i.p10 !== null && i.p90 !== null && <span className="absolute inset-y-0 rounded-full bg-[var(--mantine-color-ardoise-2)]" style={{ left: x(i.p10), width: `calc(${x(i.p90)} - ${x(i.p10)})` }} />}
+          {i.mediane_pairs !== null && <span className="absolute -inset-y-0.5 w-0.5 bg-[var(--mantine-color-ardoise-5)]" style={{ left: x(i.mediane_pairs) }} />}
+          {v !== null && v !== undefined && (
+            <span className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow"
+              style={{ left: x(v), background: hors ? "#dc2626" : "#0f172a" }} />
+          )}
+        </div>
+      </Tooltip>
+    </div>
   );
 }
 
@@ -197,36 +196,44 @@ export default function PourquoiScore({ mf, detail }) {
   const e = detail.enjeu ?? {};
   const pairs = detail.pairs ?? { indicateurs: [] };
   return (
-    <div className="grid gap-4 @4xl:grid-cols-[minmax(0,1fr)_300px]">
-      <Carte titre="Pourquoi ce score ?" icone={Lightbulb}
-        droite={<span className="chiffres text-[20px] font-bold leading-none text-encre">{nombre(detail.score)}<span className="text-[12px] font-medium text-attenue"> /100</span></span>}>
-        <p className="-mt-1 text-[12px] text-attenue">
-          Base {nombre(base)} + {nombre(somme)} pts apportés par {contributions.length} signal{contributions.length > 1 ? "aux" : ""}
-          {e.estime > 0 && <> · enjeu estimé <strong className="text-encre-2">{fmtCompact(e.estime)}</strong> ({fmtCompact(e.bas)} – {fmtCompact(e.haut)})</>}
-        </p>
-        <ul className="flex flex-col divide-y divide-bordure">
+    <div className="grid gap-4 @4xl:grid-cols-[minmax(0,1fr)_320px]">
+      <Card>
+        <EnTete titre="Pourquoi ce score ?" icone={Lightbulb}
+          droite={<Text fz={26} fw={800} lh={1} className="chiffres">{nombre(detail.score)}<Text span size="sm" c="dimmed" fw={500}> /100</Text></Text>} />
+        <Group gap="xs" mb="md" wrap="wrap">
+          <Badge variant="light" color="ardoise" size="lg">base {nombre(base)}</Badge>
+          <Text size="sm" c="dimmed">+</Text>
+          <Badge variant="light" color="red" size="lg">{nombre(somme)} pts · {contributions.length} signal{contributions.length > 1 ? "aux" : ""}</Badge>
+          {e.estime > 0 && (
+            <Tooltip label={`Fourchette ${fmtCompact(e.bas)} – ${fmtCompact(e.haut)} : droits éludés estimés sur 12 mois glissants`}>
+              <Badge variant="outline" color="ardoise" size="lg" className="cursor-help">enjeu estimé {fmtCompact(e.estime)}</Badge>
+            </Tooltip>
+          )}
+        </Group>
+        <div className="divide-y divide-[var(--bordure)]">
           {visibles.map((c) => <Contribution key={c.code_signal} mf={mf} c={c} max={max} />)}
-          {!contributions.length && <li className="py-2 text-[12.5px] text-attenue">Aucun signal ne contribue au score ce mois-ci.</li>}
-        </ul>
+          {!contributions.length && <Text size="sm" c="dimmed">Aucun signal ne contribue au score ce mois-ci.</Text>}
+        </div>
         {contributions.length > VISIBLES && (
-          <button type="button" onClick={() => setTout((t) => !t)} className="self-start text-[12px] font-semibold text-action-texte">
-            {tout ? "Masquer les signaux secondaires" : `Afficher ${contributions.length - VISIBLES} signal${contributions.length - VISIBLES > 1 ? "aux" : ""} secondaire${contributions.length - VISIBLES > 1 ? "s" : ""}`}
-          </button>
+          <Button variant="subtle" size="compact-sm" mt="sm" onClick={() => setTout((t) => !t)} className="self-start"
+            leftSection={tout ? <ChevronDown size={14} /> : <ChevronRight size={14} />}>
+            {tout ? "Masquer les signaux secondaires" : `${contributions.length - VISIBLES} signal${contributions.length - VISIBLES > 1 ? "aux" : ""} secondaire${contributions.length - VISIBLES > 1 ? "s" : ""}`}
+          </Button>
         )}
-      </Carte>
+        <Group gap={6} mt="md"><FileSearch size={13} className="text-attenue" /><Text size="xs" c="dimmed">Chaque point du score renvoie à des lignes de données brutes.</Text></Group>
+      </Card>
       <div className="grid content-start gap-4 @2xl:grid-cols-2 @4xl:grid-cols-1">
         <Decision mf={mf} suggeree={detail.action_suggeree} initiales={detail.decisions ?? []} />
         {pairs.indicateurs.length > 0 && (
-          <Carte titre="Face à ses pairs" icone={Users} droite={<span className="text-[11.5px] text-attenue">{pairs.nb_pairs} entreprises</span>}>
-            <ul className="flex flex-col gap-3">
-              {pairs.indicateurs.map((i) => <Jauge key={i.nom} i={i} />)}
-            </ul>
-            <p className="flex items-center gap-3 text-[11px] text-attenue">
-              <span className="inline-flex items-center gap-1"><span className="h-1.5 w-4 rounded-full bg-bordure" />P10–P90</span>
-              <span className="inline-flex items-center gap-1"><span className="h-2.5 w-0.5 bg-attenue" />médiane</span>
-              <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-encre" />entreprise</span>
-            </p>
-          </Carte>
+          <Card>
+            <EnTete titre="Face à ses pairs" icone={Users} droite={<Text size="xs" c="dimmed">{pairs.nb_pairs} entreprises</Text>} />
+            <Stack gap="md">{pairs.indicateurs.map((i) => <Jauge key={i.nom} i={i} />)}</Stack>
+            <Group gap="md" mt="md">
+              <Group gap={4}><span className="h-1.5 w-4 rounded-full bg-[var(--mantine-color-ardoise-2)]" /><Text size="xs" c="dimmed">80 % des pairs</Text></Group>
+              <Group gap={4}><span className="h-2.5 w-0.5 bg-[var(--mantine-color-ardoise-5)]" /><Text size="xs" c="dimmed">médiane</Text></Group>
+              <Group gap={4}><span className="size-2 rounded-full bg-[#0f172a]" /><Text size="xs" c="dimmed">entreprise</Text></Group>
+            </Group>
+          </Card>
         )}
       </div>
     </div>

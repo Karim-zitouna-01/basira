@@ -1,7 +1,8 @@
 // Page d'une entreprise (design_references/reference 2). Le copilote occupe la colonne de droite.
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { CalendarDays, ChevronRight, Star } from "lucide-react";
+import { ActionIcon, Anchor, Badge, Breadcrumbs, CloseButton, Code, Group, Paper, SegmentedControl, Text, Title, Tooltip } from "@mantine/core";
+import { ChevronRight, Star } from "lucide-react";
 import { chargerFiche, meta, trouverEntreprise } from "../lib/donnees.js";
 import { useContextePage } from "../lib/contextePage.jsx";
 import { basculerFavori, noterConsultation, useSuivis } from "../lib/suivis.js";
@@ -14,10 +15,10 @@ import PourquoiScore from "../components/PourquoiScore.jsx";
 
 const MOIS = meta.mois_couverts;
 const PERIODES = [
-  { id: "12", libelle: "12 derniers mois", valeur: null },
-  { id: "6", libelle: "6 derniers mois", valeur: { debut: MOIS.at(-6), fin: MOIS.at(-1) } },
-  { id: "3", libelle: "3 derniers mois", valeur: { debut: MOIS.at(-3), fin: MOIS.at(-1) } },
-  { id: "1", libelle: `${fmtMoisIso(MOIS.at(-1))} seulement`, valeur: { debut: MOIS.at(-1), fin: MOIS.at(-1) } }
+  { id: "12", court: "12 mois", libelle: "12 derniers mois", valeur: null },
+  { id: "6", court: "6 mois", libelle: "6 derniers mois", valeur: { debut: MOIS.at(-6), fin: MOIS.at(-1) } },
+  { id: "3", court: "3 mois", libelle: "3 derniers mois", valeur: { debut: MOIS.at(-3), fin: MOIS.at(-1) } },
+  { id: "1", court: fmtMoisIso(MOIS.at(-1)), libelle: `${fmtMoisIso(MOIS.at(-1))} seulement`, valeur: { debut: MOIS.at(-1), fin: MOIS.at(-1) } }
 ];
 const idPeriode = (p) => PERIODES.find((x) => JSON.stringify(x.valeur) === JSON.stringify(p))?.id ?? "perso";
 
@@ -85,36 +86,36 @@ export default function FicheEntreprise({ copilote, palette }) {
     <div className="@container flex flex-col gap-5 px-6 py-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-1">
-          <nav className="flex items-center gap-1 text-[12px] text-attenue" aria-label="Fil d'Ariane">
-            <Link to="/" className="hover:text-encre">Entreprises</Link>
-            <ChevronRight size={12} aria-hidden="true" />
-          </nav>
-          <div className="flex min-w-0 items-center gap-2.5">
-            <h1 className="truncate text-[21px] font-bold leading-tight text-encre" title={e.company_name}>{e.company_name}</h1>
-            <Pastille segment={e.segment} />
-            <button type="button" onClick={() => basculerFavori(e.mf)} aria-pressed={suivie} title={suivie ? "Ne plus suivre" : "Suivre ce dossier"}
-              className="grid size-7 shrink-0 place-items-center rounded-md text-attenue hover:bg-fond-2">
-              <Star size={15} fill={suivie ? "var(--seg-surv)" : "none"} stroke={suivie ? "var(--seg-surv)" : "currentColor"} aria-hidden="true" />
-            </button>
-          </div>
-          <div className="flex min-w-0 gap-x-2 truncate text-[12.5px] text-attenue">
-            <span className="font-mono text-encre-2">{e.company_id}</span>·
-            <span className="truncate" title={e.sector_nacef}>NAT {e.sector_nacef}</span>·
-            <span>{e.gouvernorat}</span>
-          </div>
+          <Breadcrumbs separator={<ChevronRight size={12} />} fz="xs">
+            <Anchor component={Link} to="/" size="xs" c="dimmed">Entreprises</Anchor>
+            <Text size="xs" c="dimmed" truncate maw={260}>{e.company_name}</Text>
+          </Breadcrumbs>
+          <Group gap={10} wrap="nowrap" className="min-w-0">
+            <Title order={1} fz={24} lh={1.2} className="truncate" title={e.company_name}>{e.company_name}</Title>
+            <Pastille segment={e.segment} taille="lg" />
+            <Tooltip label={suivie ? "Ne plus suivre ce dossier" : "Suivre ce dossier"}>
+              <ActionIcon onClick={() => basculerFavori(e.mf)} aria-pressed={suivie} aria-label={suivie ? "Ne plus suivre" : "Suivre ce dossier"}>
+                <Star size={17} fill={suivie ? "var(--seg-surv)" : "none"} stroke={suivie ? "var(--seg-surv)" : "currentColor"} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
+          <Group gap={8} wrap="nowrap" className="min-w-0">
+            <Code fz={12}>{e.company_id}</Code>
+            <Text size="sm" c="dimmed" truncate title={e.sector_nacef}>NAT {e.sector_nacef}</Text>
+            <Text size="sm" c="dimmed">· {e.gouvernorat}</Text>
+          </Group>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-            <label htmlFor="periode" className="flex items-center gap-1.5 rounded-md border border-bordure bg-carte px-2.5 py-1.5 text-[12.5px] text-encre-2">
-              <CalendarDays size={14} aria-hidden="true" />
-              <span className="sr-only">Période analysée</span>
-              <select id="periode" value={choix} onChange={(ev) => setPeriode(PERIODES.find((p) => p.id === ev.target.value)?.valeur ?? null)}
-                className="bg-transparent font-semibold text-encre outline-none">
-                {PERIODES.map((p) => <option key={p.id} value={p.id}>{p.libelle}</option>)}
-                {choix === "perso" && <option value="perso">{periode.debut === periode.fin ? fmtMoisIso(periode.debut) : `${fmtMoisIso(periode.debut)} → ${fmtMoisIso(periode.fin)}`}</option>}
-              </select>
-            </label>
-            <BoutonCopilote copilote={copilote} />
-        </div>
+        <Group gap="xs" wrap="wrap">
+          {choix === "perso" && (
+            <Badge variant="light" size="lg" rightSection={<CloseButton size="xs" onClick={() => setPeriode(null)} aria-label="Revenir à 12 mois" />}>
+              {periode.debut === periode.fin ? fmtMoisIso(periode.debut) : `${fmtMoisIso(periode.debut)} → ${fmtMoisIso(periode.fin)}`}
+            </Badge>
+          )}
+          <SegmentedControl size="xs" aria-label="Période analysée" value={choix === "perso" ? "" : choix}
+            onChange={(v) => setPeriode(PERIODES.find((p) => p.id === v)?.valeur ?? null)}
+            data={PERIODES.map((p) => ({ value: p.id, label: p.court }))} />
+          <BoutonCopilote copilote={copilote} />
+        </Group>
       </header>
 
       {e.detail ? (
