@@ -17,11 +17,11 @@ import { arrondirBarres, nouveauGroupe, useRedimensionnement } from "../lib/dcOu
 import { fmtCompact, fmtDT, fmtDate, fmtMois, fmtMoisIso } from "../lib/format.js";
 import CarteKpi from "./CarteKpi.jsx";
 import GrapheReseau from "./GrapheReseau.jsx";
+import TableOperations from "./TableOperations.jsx";
 
 const auMois = (m) => new Date(`${m}-01T00:00:00`);
 const versIso = d3.timeFormat("%Y-%m");
 const signe = (v) => (v >= 0 ? "+" : "");
-const echapper = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" })[c]);
 
 function Carte({ titre, icone: Icone, aide, actions, children, className = "" }) {
   return (
@@ -64,7 +64,7 @@ function evenementsHistorique(e) {
   return ev.sort((a, b) => b.date.localeCompare(a.date));
 }
 
-export default function DashboardVisualizations({ entreprise, palette, periode, onPeriode, onSelection }) {
+export default function DashboardVisualizations({ entreprise, palette, periode, onPeriode, onSelection, insertion }) {
   const refs = {
     tendance: useRef(null), score: useRef(null), systemes: useRef(null),
     contreparties: useRef(null), comptage: useRef(null), table: useRef(null)
@@ -75,6 +75,7 @@ export default function DashboardVisualizations({ entreprise, palette, periode, 
   const [montants, setMontants] = useState(new Map());
   const [filtres, setFiltres] = useState({ systemes: [], contreparties: [] });
   const [kpis, setKpis] = useState(null);
+  const [ops, setOps] = useState({ lignes: [], total: 0 });
 
   useEffect(() => {
     const groupe = nouveauGroupe("fiche");
@@ -103,8 +104,15 @@ export default function DashboardVisualizations({ entreprise, palette, periode, 
     const dimMoisO = cfO.dimension((o) => o.moisDate);
     const dimSource = cfO.dimension((o) => o.source);
     const dimContrepartie = cfO.dimension((o) => o.contrepartie);
-    const dimTable = cfO.dimension((o) => o.jour);
-    const observeParMois = dimMoisO.group().reduceSum((o) => o.montant_dt);
+    const groupeFlux = dimMoisO.group().reduceSum((o) => o.montant_dt);
+    // Tous les mois présents (0 si aucune opération) : sinon une entreprise aux flux concentrés sur un seul mois
+    // (annexe V annuelle) n'a qu'un point et DC.js ne trace aucune courbe
+    const observeParMois = {
+      all: () => {
+        const m = new Map(groupeFlux.all().map((d) => [+d.key, d.value]));
+        return moisListe.map((mm) => ({ key: auMois(mm), value: m.get(+auMois(mm)) ?? 0 }));
+      }
+    };
 
     // 1. Déclaré vs observé (glisser pour choisir la période)
     const tendance = new dc.CompositeChart(refs.tendance.current, groupe);
@@ -215,24 +223,7 @@ export default function DashboardVisualizations({ entreprise, palette, periode, 
       arrondirBarres(7)(ch);
     });
 
-    // 5. Comptage et table des opérations
-    new dc.DataCount(refs.comptage.current, groupe)
-      .crossfilter(cfO).groupAll(cfO.groupAll())
-      .html({ some: "<strong>%filter-count</strong> sur %total-count opérations", all: "<strong>%total-count</strong> opérations" });
-    new dc.DataTable(refs.table.current, groupe)
-      .dimension(dimTable).size(Infinity).showSections(false).sortBy((o) => o.jour).order(d3.descending)
-      // 4 colonnes lisibles ; opération, référence, circuit et observation en seconde ligne (plus de table tronquée)
-      .columns([
-        { label: "Date", format: (o) => `<span class="chiffres whitespace-nowrap">${fmtDate(o.date)}</span>` },
-        { label: "Système", format: (o) => `<span class="whitespace-nowrap">${echapper(o.source)}</span>` },
-        {
-          label: "Contrepartie",
-          format: (o) => `<span class="${o.contrepartie_signalee ? "font-semibold text-prio-texte" : "text-encre"}">${o.contrepartie_signalee ? "⚠ " : ""}${echapper(o.contrepartie)}</span>`
-            + `<span class="block text-[11px] text-attenue">${echapper([o.type_operation, o.circuit && `circuit ${o.circuit}`, o.reference].filter(Boolean).join(" · "))}</span>`
-            + (o.observation ? `<span class="block text-[11px] font-semibold text-surv-texte">${echapper(o.observation)}</span>` : "")
-        },
-        { label: "Montant", format: (o) => `<span class="chiffres block whitespace-nowrap text-right">${fmtDT(o.montant_dt)}</span>` }
-      ]);
+    // 5. Table des opérations : rendue par React (recherche, tri, pagination) à partir de la sélection crossfilter
 
     // --- Résumé de la sélection : indicateurs, réseau, pastilles, copilote ---
     function publier() {
@@ -267,6 +258,7 @@ export default function DashboardVisualizations({ entreprise, palette, periode, 
       const f = { systemes: [...systemes.filters()], contreparties: [...contreparties.filters()] };
       setFiltres(f);
       setMontants(d3.rollup(lignes, (v) => d3.sum(v, (o) => o.montant_dt), (o) => o.contrepartie_id));
+      setOps({ lignes, total: cfO.size() });
       const k = {
         periode: { debut: moisSel[0], fin: moisSel.at(-1), nb_mois: n },
         score: { valeur: scoreFin, reference: scoreRef.score, mois_reference: scoreRef.mois },
@@ -378,6 +370,9 @@ export default function DashboardVisualizations({ entreprise, palette, periode, 
         </Carte>
       </div>
 
+      {/* « Pourquoi ce score ? » et décision : juste après la vue d'ensemble chiffrée */}
+      {insertion}
+
       <div className="grid gap-4 @2xl:grid-cols-3">
         <Carte titre="Flux par système" icone={ListChecks} aide="Cliquez un système pour filtrer.">
           <div ref={refs.systemes} />
@@ -393,10 +388,9 @@ export default function DashboardVisualizations({ entreprise, palette, periode, 
       </Carte>
 
       <div className="grid gap-4 @2xl:grid-cols-3">
-        <Carte titre="Opérations de la sélection" icone={ListChecks} className="@2xl:col-span-2" actions={<span ref={refs.comptage} className="text-[12.5px] text-encre-2" />}>
-          <div className="max-h-[420px] overflow-auto rounded-lg border border-bordure">
-            <table ref={refs.table} className="dc-data-table" />
-          </div>
+        <Carte titre="Opérations de la sélection" icone={ListChecks} className="@2xl:col-span-2"
+          aide="Chaque ligne est une pièce source : déclaration en douane (SINDA), paiement public (ADEB) ou ligne d'annexe V déclarée par un client ou par l'entreprise. Les filtres du haut (période, système, contrepartie) s'appliquent ici.">
+          <TableOperations lignes={ops.lignes} total={ops.total} />
         </Carte>
         <Carte titre="Historique" icone={History}>
           <ol className="flex flex-col gap-3">

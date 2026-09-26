@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 
 from scoring import config
+from scoring.config import fmt_dt
 from scoring.io import lire_csv
 
 from .store_reel import MOIS_NOUVELLE_RELATION, RealStore, _mois_moins
@@ -103,6 +104,11 @@ class FrontStore:
         a5 = a5[a5["exercice"].astype(int).map(lambda e: DEBUT <= f"{e}-12-31" <= FIN)] if len(a5) else a5
         self.a5_fournisseur = {mf: g for mf, g in a5.groupby("mf_fournisseur")} if len(a5) else {}
         self.a5_client = {mf: g for mf, g in a5.groupby("mf_payeur")} if len(a5) else {}
+        # pour expliquer les profils coquilles : sommes reçues (annexe V 2025) et salariés (annexe I, dernier exercice)
+        tout_a5 = s.annexe5.reset_index() if len(s.annexe5) else pd.DataFrame()
+        self.a5_recu_2025 = tout_a5[tout_a5["exercice"].astype(int) == 2025].groupby("mf_fournisseur")["montant_ttc"].sum().to_dict() if len(tout_a5) else {}
+        a1 = lire_csv("employeur_annexe1_synthese.csv", obligatoire=False)
+        self.salaries = a1.sort_values("exercice").drop_duplicates("mf", keep="last").set_index("mf")["nb_salaries"].to_dict() if len(a1) else {}
 
         # fournisseurs étrangers « nouveaux et partagés » : ≥ 3 importateurs ayant commencé avec eux en moins de 18 mois
         seuil = _mois_moins(self.mois, 18)
@@ -133,11 +139,51 @@ class FrontStore:
             if nouveau:
                 n = sum(1 for a in s.adj.get(contrepartie, []) if a["type_relation"] == "IMPORT_FOURNISSEUR"
                         and str(a["premiere_date"])[:7] >= _mois_moins(self.mois, 18))
-                return f"Nouveau fournisseur étranger apparu en même temps chez {n} importateurs"
+                return f"Fournisseur étranger adopté en même temps par {n} importateurs en moins de 18 mois"
         return None
 
     def _signalee(self, contrepartie: str, mf: str) -> bool:
         return self._motif(contrepartie, mf) is not None
+
+    def _motif_detail(self, contrepartie: str, mf: str) -> dict | None:
+        """Motif du signalement avec ses preuves chiffrées : {titre, details[]} (affiché dans le panneau du graphe)."""
+        titre = self._motif(contrepartie, mf)
+        if titre is None:
+            return None
+        s, details = self.s, []
+        if contrepartie in s.identites and s._est_coquille(contrepartie, self.mois):
+            ident = s.identites[contrepartie]
+            sal = self.salaries.get(contrepartie)
+            details.append("Aucun salarié déclaré (annexe I)" if not sal else f"{sal} salarié(s) déclaré(s) (annexe I)")
+            debut = str(ident.get("date_debut_activite") or "")[:10]
+            if debut:
+                mois_age = (int(self.mois[:4]) - int(debut[:4])) * 12 + int(self.mois[5:7]) - int(debut[5:7])
+                details.append(f"Créée le {debut[8:10]}/{debut[5:7]}/{debut[:4]}, il y a {mois_age} mois")
+            recu = self.a5_recu_2025.get(contrepartie, 0.0)
+            ca = sum(_montant(s.declarations.get((contrepartie, f"2025-{m:02d}"), {}).get("ca_total_declare")) for m in range(1, 13))
+            if recu:
+                ratio = f" (×{recu / ca:,.0f})".replace(",", " ") if ca > 0 else ""
+                details.append(f"Ses clients déclarent lui avoir versé {fmt_dt(recu)} en 2025 (annexe V), pour {fmt_dt(ca)} de CA déclaré{ratio}")
+            details.append("Ces trois critères réunis sont la définition d'une société écran servant à émettre de fausses factures.")
+        elif contrepartie in s.identites:
+            r = s.scores[(contrepartie, self.mois)]
+            detail = s.entreprise(contrepartie, self.mois)
+            for c in sorted(detail["contributions"], key=lambda c: -c["points"])[:3]:
+                details.append(f"{LIBELLES_SIGNAUX.get(c['code_signal'], c['code_signal'])} (+{c['points']:.0f} pts) : {c['explication']}")
+            details.append(f"Action suggérée par Basira pour cette entreprise : {ACTIONS.get(r['action_suggeree'], r['action_suggeree'])}.")
+        else:  # fournisseur étranger nouveau et partagé
+            seuil = _mois_moins(self.mois, 18)
+            premiere = min((str(a["premiere_date"])[:10] for a in s.adj.get(contrepartie, [])), default="")
+            if premiere:
+                details.append(f"Connu en douane depuis le {premiere[8:10]}/{premiere[5:7]}/{premiere[:4]}, mais plusieurs importateurs l'ont adopté récemment, au même moment")
+            importateurs = [a["source"] for a in s.adj.get(contrepartie, [])
+                            if a["type_relation"] == "IMPORT_FOURNISSEUR" and str(a["premiere_date"])[:7] >= seuil]
+            noms = [f"{s.noms.get(i, i)} ({(self._segment(i) or 'NORMAL').lower()})" for i in importateurs if i != mf][:5]
+            if noms:
+                details.append(f"Autres importateurs qui ont commencé avec lui depuis moins de 18 mois : {', '.join(noms)}")
+            details.append("Plusieurs entreprises qui adoptent en même temps un fournisseur inconnu : schéma typique d'un réseau "
+                           "de sous-facturation ou d'importations non déclarées.")
+        return {"titre": titre, "details": details}
 
     def _declencheur(self, r) -> str:
         # seulement pour les entreprises à surveiller : ailleurs, les signaux faibles ne « déclenchent » rien
@@ -286,6 +332,7 @@ class FrontStore:
         liens = {}
         for n in noeuds:
             n["nb_liees"] = 0
+            n["motif_detail"] = self._motif_detail(n["id"], mf) if n["risk_flag"] else None
             if n["type"] == "Acheteur public":
                 continue  # les acheteurs publics paient des centaines d'entreprises : pas de lien de niveau 2
             autres = []

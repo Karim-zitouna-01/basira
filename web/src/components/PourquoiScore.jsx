@@ -88,7 +88,7 @@ function Preuves({ mf, code, nb }) {
 
 function Contribution({ mf, c, max }) {
   const [lentille, couleur] = LENTILLES[c.lentille] ?? [c.lentille, "ardoise"];
-  const fait = nettoyerFait(c.fait_fr);
+  const fait = c.explication || nettoyerFait(c.fait_fr); // explication chiffrée de l'API, sinon phrase de B nettoyée
   return (
     <div className="py-3 first:pt-0 last:pb-0">
       <Group justify="space-between" wrap="nowrap" gap="md">

@@ -16,6 +16,7 @@ import pandas as pd
 from scoring import config
 from scoring.io import lire_csv
 
+from .explications import expliquer
 from .store import BaseStore, Introuvable
 
 log = logging.getLogger("basira.store")
@@ -150,8 +151,10 @@ class RealStore(BaseStore):
         cols = ["mf", "mois", "code_signal", "lentille", "valeur_norm", "valeur_brute", "fait_fr", "sources", "preuves"]
         sig = pd.read_parquet(config.SIGNAUX / "signaux.parquet", columns=cols, filters=[("valeur_norm", ">", 0)])
         self.signaux: dict[tuple, dict] = defaultdict(dict)
+        self.brutes: dict[tuple, dict] = defaultdict(dict)  # valeur_brute, pour les explications chiffrées
         for mf, mois, code, lent, v, brute, fait, src, pr in sig.itertuples(index=False):
             self.signaux[(mf, mois)][code] = (float(v), fait or fait_faible(code, brute, v), _liste(src), _liste(pr))
+            self.brutes[(mf, mois)][code] = float(brute)
 
     def _charger_series(self):
         d = lire_csv("declarations_mensuelles.csv")
@@ -272,21 +275,24 @@ class RealStore(BaseStore):
         r = self._ligne(mf, mois)
         e = self._enjeu(mf, mois)
         contributions = []
+        pairs = self._pairs(mf, mois)
         for c in r["contributions"]:
             code, pts = c["code_signal"], float(c["points"])
             if code == config.NOUVEAU_SCHEMA:
                 contributions.append({"code_signal": code, "lentille": "COMBINAISON", "points": round(pts, 1), "valeur_norm": None,
-                                      "fait_fr": FAIT_NOUVEAU_SCHEMA, "sources": [], "nb_preuves": 0})
+                                      "fait_fr": FAIT_NOUVEAU_SCHEMA, "sources": [], "nb_preuves": 0,
+                                      "explication": expliquer(self, mf, mois, code, FAIT_NOUVEAU_SCHEMA, pairs)})
                 continue
             v, fait, src, pr = self._signal(mf, mois, code)
             contributions.append({"code_signal": code, "lentille": config.LENTILLES.get(code, "COMBINAISON"), "points": round(pts, 1),
-                                  "valeur_norm": round(v, 2), "fait_fr": fait, "sources": src, "nb_preuves": len(pr)})
+                                  "valeur_norm": round(v, 2), "fait_fr": fait, "sources": src, "nb_preuves": len(pr),
+                                  "explication": expliquer(self, mf, mois, code, fait, pairs)})
         return {
             "identite": self.identites[mf], "score": _f(r["score"], 1), "segment": r["segment"], "confiance": e["confiance"],
             "enjeu": {"estime": e["estime"], "bas": e["bas"], "haut": e["haut"]}, "action_suggeree": r["action_suggeree"],
             "resume_fr": r["resume_fr"],
             "trajectoire": [{"mois": t["mois"], "score": _f(t["score"], 1), "segment": t["segment"]} for t in self.traj[mf] if t["mois"] <= mois],
-            "contributions": contributions, "pairs": self._pairs(mf, mois),
+            "contributions": contributions, "pairs": pairs,
             "series": [s for s in self.series.get(mf, []) if s["mois"] <= mois],
             "decisions": [], "controles_passes": [c for c in self.controles.get(mf, []) if c["date_avis"][:7] <= mois],
         }

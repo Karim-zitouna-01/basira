@@ -4,7 +4,7 @@
 import { memo, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Background, Controls, Handle, MarkerType, Panel, Position, ReactFlow, ReactFlowProvider, useReactFlow } from "@xyflow/react";
-import { Alert, Anchor, Badge, Button, CloseButton, Group, Paper, SegmentedControl, Stack, Text, ThemeIcon, Tooltip } from "@mantine/core";
+import { Alert, Anchor, Badge, Button, CloseButton, Group, List, Paper, ScrollArea, SegmentedControl, Stack, Text, ThemeIcon, Tooltip, UnstyledButton } from "@mantine/core";
 import { AlertTriangle, ArrowRight, ArrowUpRight, Filter, History } from "lucide-react";
 import { entreprisesLiees } from "../lib/donnees.js";
 import { SEGMENTS } from "../lib/palettes.js";
@@ -98,7 +98,7 @@ function Explication({ n, entreprise, onFermer, onFiltrer }) {
     : <><b>{n.label}</b> a payé <b>{fmtDT(n.montant)}</b> à <b>{nom}</b></>;
   const liees = (entreprise.liens_portefeuille ? entreprise.liens_portefeuille[n.id] ?? [] : entreprisesLiees(n.id, entreprise.mf)).filter((o) => o.mf !== n.id);
   return (
-    <Paper withBorder shadow="md" p="md" radius="lg" w={320} className="!bg-white">
+    <Paper withBorder p="md" radius="lg" className="!bg-white">
       <Group justify="space-between" align="flex-start" wrap="nowrap" mb={6}>
         <div className="min-w-0">
           <Text fw={700} size="sm" lh={1.3}>{n.label}</Text>
@@ -110,8 +110,12 @@ function Explication({ n, entreprise, onFermer, onFiltrer }) {
         <Text size="sm" lh={1.45}>{phrase}{n.horsSelection ? " (cumul de la relation)" : " sur la période affichée"}.</Text>
         <Text size="xs" c="dimmed">Source : {SOURCE_RELATION[n.relation] ?? "graphe des relations"}{n.depuis ? ` · relation depuis le ${fmtDate(n.depuis)}` : ""}{n.nouvelle ? " (nouvelle)" : ""}</Text>
         {n.motif && (
-          <Alert color="red" variant="light" p="xs" icon={<AlertTriangle size={15} />} title="Pourquoi elle est signalée">
-            <Text size="xs">{n.motif}</Text>
+          <Alert color="red" variant="light" p="sm" icon={<AlertTriangle size={16} />} title={n.motif_detail?.titre ?? n.motif}>
+            {n.motif_detail?.details?.length > 0 && (
+              <List size="xs" spacing={6} mt={4} className="text-encre-2">
+                {n.motif_detail.details.map((d, i) => <List.Item key={i}>{d}</List.Item>)}
+              </List>
+            )}
           </Alert>
         )}
         {liees.length > 0 && (
@@ -181,6 +185,7 @@ function Graphe({ entreprise, montants, contrepartiesFiltrees, onClicContreparti
 
   const tousNoeuds = [...gauche, ...droite];
   const noeudChoisi = tousNoeuds.find((n) => n.id === choisi);
+  const tousSignales = tousNoeuds.filter((n) => n.risk_flag).sort((a, b) => b.montant - a.montant);
   const clic = (_, nd) => {
     if (nd.id === "__centre") return;
     const n = nd.data.n;
@@ -192,7 +197,7 @@ function Graphe({ entreprise, montants, contrepartiesFiltrees, onClicContreparti
   const somme = (l) => l.reduce((s, n) => s + n.montant, 0);
   const signalees = droite.filter((n) => n.risk_flag);
   const r = entreprise.reseau_resume;
-  const hauteurCanvas = Math.min(620, Math.max(300, lignes * 66 + 40));
+  const hauteurCanvas = Math.min(620, Math.max(380, lignes * 66 + 40));
   if (!tousNoeuds.length) return <Text c="dimmed" size="sm" ta="center" py="xl">Aucune contrepartie sur la période.</Text>;
 
   return (
@@ -207,6 +212,7 @@ function Graphe({ entreprise, montants, contrepartiesFiltrees, onClicContreparti
         <SegmentedControl size="xs" value={vue} onChange={setVue} data={[{ value: "toutes", label: "Toutes" }, { value: "signalees", label: "Signalées" }]} />
       </Group>
 
+      <div className="grid gap-3 @4xl:grid-cols-[minmax(0,1fr)_340px]">
       <div style={{ height: hauteurCanvas }} className="relative overflow-hidden rounded-lg border border-bordure bg-fond">
         <ReactFlow nodes={nodes} edges={edges} nodeTypes={TYPES_NOEUDS} onNodeClick={clic} fitView fitViewOptions={{ padding: 0.08 }}
           nodesDraggable={false} nodesConnectable={false} elementsSelectable={false} zoomOnScroll={false} zoomOnDoubleClick={false}
@@ -219,12 +225,31 @@ function Graphe({ entreprise, montants, contrepartiesFiltrees, onClicContreparti
           <Panel position="top-right">
             <Text size="xs" fw={700} c="dimmed" tt="uppercase" lts="0.05em">Payés par l'entreprise</Text>
           </Panel>
-          {noeudChoisi && (
-            <Panel position="top-center">
-              <Explication n={noeudChoisi} entreprise={entreprise} onFermer={() => setChoisi(null)} onFiltrer={(l) => { onClicContrepartie(l); setChoisi(null); }} />
-            </Panel>
-          )}
         </ReactFlow>
+      </div>
+
+      {/* Colonne d'explication : hors du canevas, jamais rognée */}
+      <ScrollArea.Autosize mah={Math.max(hauteurCanvas, 460)} type="auto" offsetScrollbars>
+        {noeudChoisi ? (
+          <Explication n={noeudChoisi} entreprise={entreprise} onFermer={() => setChoisi(null)} onFiltrer={(l) => { onClicContrepartie(l); setChoisi(null); }} />
+        ) : (
+          <Paper withBorder p="md" radius="lg" className="!bg-white">
+            <Text fw={700} size="sm" mb={4}>{tousSignales.length ? `${tousSignales.length} contrepartie${tousSignales.length > 1 ? "s" : ""} signalée${tousSignales.length > 1 ? "s" : ""}` : "Aucune contrepartie signalée"}</Text>
+            <Text size="xs" c="dimmed" mb="sm">Cliquez une contrepartie, ici ou dans le graphe, pour voir la relation et le détail du motif.</Text>
+            <Stack gap={6}>
+              {tousSignales.map((n) => (
+                <UnstyledButton key={n.id} onClick={() => setChoisi(n.id)} className="rounded-md border border-[#fecaca] bg-[#fff5f5] px-3 py-2 hover:border-[#dc2626]">
+                  <Group gap={6} wrap="nowrap" justify="space-between">
+                    <Text size="sm" fw={600} truncate>{n.label}</Text>
+                    <Text size="xs" fw={700} className="chiffres shrink-0">{fmtCompact(n.montant)}</Text>
+                  </Group>
+                  <Text size="xs" c="red.8" lh={1.35} mt={2}>{n.motif_detail?.titre ?? n.motif}</Text>
+                </UnstyledButton>
+              ))}
+            </Stack>
+          </Paper>
+        )}
+      </ScrollArea.Autosize>
       </div>
 
       <Group gap="lg" wrap="wrap">

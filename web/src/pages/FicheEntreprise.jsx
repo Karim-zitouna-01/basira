@@ -118,17 +118,17 @@ export default function FicheEntreprise({ copilote, palette }) {
         </Group>
       </header>
 
-      {e.detail ? (
-        <PourquoiScore key={`pourquoi-${e.mf}`} mf={e.mf} detail={e.detail} />
-      ) : (
-        // Jeu fictif : pas de détail du score, on garde le déclencheur de D
-        <div className="rounded-xl border border-bordure bg-carte px-4 py-2.5 text-[13px] text-encre">
-          <span className="text-attenue">Déclencheur principal : </span>{e.primary_trigger}
-          <span className="text-attenue"> · Action recommandée : </span><span className="font-semibold">{e.recommended_action}</span>
-        </div>
-      )}
-
-      <DashboardVisualizations key={e.mf} entreprise={e} palette={palette} periode={periode} onPeriode={surPeriode} onSelection={surSelection} />
+      {/* Vue d'ensemble chiffrée en tête ; « Pourquoi ce score ? » s'insère juste après les deux premiers graphiques */}
+      <DashboardVisualizations key={e.mf} entreprise={e} palette={palette} periode={periode} onPeriode={surPeriode} onSelection={surSelection}
+        insertion={e.detail ? (
+          <PourquoiScore key={`pourquoi-${e.mf}`} mf={e.mf} detail={e.detail} />
+        ) : (
+          // Jeu fictif : pas de détail du score, on garde le déclencheur de D
+          <Paper withBorder p="md" radius="lg">
+            <Text size="sm"><Text span c="dimmed">Déclencheur principal : </Text>{e.primary_trigger}
+              <Text span c="dimmed"> · Action recommandée : </Text><b>{e.recommended_action}</b></Text>
+          </Paper>
+        )} />
     </div>
   );
 }
