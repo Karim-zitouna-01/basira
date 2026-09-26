@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Lance la démo : API Basira (port 8000) + interface (port 5173). Ctrl+C arrête les deux.
 #   bash scripts/demo.sh                          # sans LLM (réponses de repli)
-#   LLM_BASE_URL=http://10.165.184.86:8200/v1 bash scripts/demo.sh
+#   LLM_BASE_URL=http://192.168.137.222:8200/v1 bash scripts/demo.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export PATH="$HOME/.local/node/bin:$HOME/.local/bin:$PATH"

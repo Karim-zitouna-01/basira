@@ -29,7 +29,7 @@ uv run python -m scoring.run                          # C : ~7 s, modèle, enjeu
 
 ```bash
 bash scripts/demo.sh                                             # sans LLM (réponses de repli)
-LLM_BASE_URL=http://10.165.184.86:8200/v1 bash scripts/demo.sh   # avec le Qwen distant (point d'accès)
+LLM_BASE_URL=http://192.168.137.222:8200/v1 bash scripts/demo.sh   # avec le Qwen distant (point d'accès)
 ```
 
 Interface : http://localhost:5173 (depuis Windows aussi) · API : http://localhost:8000/docs. Ctrl+C arrête les deux.
@@ -51,9 +51,9 @@ Node 22 est installé dans `~/.local/node` (sans sudo) ; `scripts/demo.sh` lance
 # sans LLM (réponses modele_texte) :
 BASIRA_MODE=real uv run uvicorn api.main:app --host 0.0.0.0 --port 8000
 # avec le Qwen distant (via le point d'accès) :
-LLM_BASE_URL=http://10.165.184.86:8200/v1 BASIRA_MODE=real uv run uvicorn api.main:app --host 0.0.0.0 --port 8000
+LLM_BASE_URL=http://192.168.137.222:8200/v1 BASIRA_MODE=real uv run uvicorn api.main:app --host 0.0.0.0 --port 8000
 # vérifier le LLM depuis WSL avant la démo :
-curl http://10.165.184.86:8200/v1/chat/completions -H 'Content-Type: application/json' \
+curl http://192.168.137.222:8200/v1/chat/completions -H 'Content-Type: application/json' \
   -d '{"messages":[{"role":"user","content":"Bonjour"}],"chat_template_kwargs":{"enable_thinking":false}}'
 ```
 

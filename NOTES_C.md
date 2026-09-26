@@ -29,3 +29,11 @@
   CHG_NOUVELLES_CATEGORIES culminent en 2026-03..05 puis s'effacent. Visible dans la trajectoire.
 - **Epsilon** : NORMAL (37), proche de SURVEILLANCE. **Eta** : NORMAL (8) et non CONFIANCE, car PAI_MAHALANOBIS de B était actif en
   2026-02 (règle « aucun signal actif sur 12 mois »).
+
+## Après les premiers essais de l'équipe (2026-09-26)
+
+- **Score plafonné à 99** (`config.SCORE_MAX`) : 3 entreprises affichaient 100 (clients de réseaux de fausses factures, 4 à 5 signaux
+  forts + bonus « nouveau schéma »). Mathématiquement attendu, mais 100 se lit comme une certitude.
+- **Copilote** : la page liste répondait par un calcul local, pas par le LLM. Désormais les deux pages passent par
+  `POST /api/assistant` (`mf` optionnel, `contexte` = données de l'écran). Réponse de repli → champ `raison_repli` affiché.
+  Qwen mesuré à 3–19 s par réponse ; délai porté à 45 s.
