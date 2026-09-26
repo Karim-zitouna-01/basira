@@ -1,19 +1,14 @@
 {
   "confirmed_by_c_and_d": true,
   "depot": "https://github.com/Karim-zitouna-01/basira",
-  "models": [
-    {"name": "Régression logistique L2 à poids non négatifs (scikit-learn 1.9.1), 16 signaux + 2 combinaisons", "owner": "C", "pretrained": false, "status": "entraînée par l'équipe sur les contrôles passés synthétiques (data/scores/modele.json)"},
-    {"name": "Qwen 3.5 9B (Alibaba Qwen, poids ouverts, GGUF quantifié Q4_K_M)", "owner": "C", "pretrained": true, "status": "assistant de l'inspecteur, utilisé sans réentraînement ; servi en local par llama.cpp (llama-server, via l'application Locally Uncensored), API compatible OpenAI, sur un PC du réseau local : aucune donnée ne sort"},
-    {"name": "Qwen (même serveur local)", "owner": "A", "pretrained": true, "status": "étape hors ligne facultative : vocabulaire des noms d'entreprises fictives ; la génération des données n'appelle pas le modèle"}
+  "composants": [
+    {"element": "Qwen 3.5 9B (Alibaba, poids ouverts, version compressée Q4_K_M)", "usage": "Assistant de l'inspecteur. Sert aussi, une seule fois et hors ligne, à proposer des noms d'entreprises fictives.", "type": "Modèle pré-entraîné, utilisé sans réentraînement"},
+    {"element": "llama.cpp (serveur llama-server, lancé via l'application Locally Uncensored)", "usage": "Fait tourner Qwen sur un ordinateur du réseau local de l'équipe.", "type": "Serveur de modèle"},
+    {"element": "Régression logistique (scikit-learn 1.9)", "usage": "Calcule le score de risque à partir des 16 indicateurs.", "type": "Modèle entraîné par l'équipe"},
+    {"element": "Python 3.13 : numpy, pandas, pyarrow, networkx", "usage": "Génération des données, calcul des indicateurs, graphe des relations.", "type": "Bibliothèques"},
+    {"element": "FastAPI, Uvicorn, Pydantic, client openai", "usage": "Serveur de l'application et dialogue avec Qwen.", "type": "Bibliothèques"},
+    {"element": "React 19, Vite, Mantine, Tailwind CSS, React Flow, dagre, dc.js, D3", "usage": "Interface web, graphiques et graphe des relations.", "type": "Bibliothèques"},
+    {"element": "React Bits (animation LatticeLoader), vis-network, polices IBM Plex Mono et Public Sans", "usage": "Animation d'attente du copilote, explorateur du graphe, typographie.", "type": "Code et ressources externes repris et cités"}
   ],
-  "libraries": {
-    "Python 3.13 (uv)": ["numpy 2.5.3", "pandas 3.0.6", "pyarrow 25.0.1", "scikit-learn 1.9.1", "networkx 3.7", "FastAPI 0.141.1", "Uvicorn 0.54.0", "Pydantic 2.13.5", "openai 3.19.2 (client)", "ReportLab 5.0.1", "pytest 9.1.1"],
-    "Web (Node 22)": ["React 19.3", "Vite 8.3", "Mantine 9.6", "Tailwind CSS 4.3", "React Flow (@xyflow/react) 12.12", "dagre 3.1", "dc.js 4.2", "Crossfilter 1.5", "D3 7.9", "react-markdown 10.1", "React Router 7.18", "lucide-react 1.48"]
-  },
-  "ressources_externes": [
-    "React Bits (reactbits.dev) : composant d'animation LatticeLoader, copié puis adapté (web/src/components/LatticeLoader)",
-    "vis-network : bibliothèque embarquée dans l'explorateur hors ligne du graphe (generation/assets)",
-    "polices IBM Plex Mono et Public Sans (Fontsource, licence SIL OFL)",
-    "diagrams.net (draw.io) pour le schéma d'architecture ; Playwright pour les tests d'interface"
-  ]
+  "precision_versions": "Versions exactes dans les fichiers uv.lock et web/package-lock.json du dépôt."
 }

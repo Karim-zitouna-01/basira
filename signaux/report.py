@@ -2,6 +2,7 @@
 
 Every figure comes from a pipeline output: scores/evaluation.json, scores/modele.json,
 scores/simulation_boucle.json, signaux/rapport_execution.json and docs/team_stack.json.
+Style: plain French for a non-specialist jury, short sentences, no semicolons in paragraphs.
 """
 
 import argparse
@@ -17,17 +18,29 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 
 PROJECT = Path(__file__).resolve().parents[1]
 
+NOMS_METHODES = {  # nom dans evaluation.json → libellé lisible
+    "Basira": "Basira",
+    "Règle statique (type SAR)": "Règle fixe, proche des pratiques actuelles",
+    "Sélection aléatoire": "Tirage au hasard",
+}
+
 
 def _lire(path):
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
 
 
 def _dt(montant):
+    if montant >= 1_000_000:
+        return f"{montant / 1_000_000:.1f}".replace(".", ",") + " million de DT"
     return f"{montant:,.0f}".replace(",", " ") + " DT"
 
 
 def _pct(x):
     return f"{100 * x:.0f} %"
+
+
+def _nb(x):
+    return str(x).replace(".", ",")
 
 
 def generate_report(data_dir, output, stack_path, final=False):
@@ -43,8 +56,9 @@ def generate_report(data_dir, output, stack_path, final=False):
 
     output.parent.mkdir(parents=True, exist_ok=True)
     styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(name="BodyFR", fontName="Helvetica", fontSize=8.6, leading=11, spaceAfter=4))
-    styles.add(ParagraphStyle(name="PuceFR", parent=styles["BodyFR"], leftIndent=9, bulletIndent=0, spaceAfter=2))
+    styles.add(ParagraphStyle(name="BodyFR", fontName="Helvetica", fontSize=8.7, leading=11.2, spaceAfter=4))
+    styles.add(ParagraphStyle(name="PuceFR", parent=styles["BodyFR"], leftIndent=10, bulletIndent=0, spaceAfter=2.5))
+    styles.add(ParagraphStyle(name="CelluleFR", parent=styles["BodyFR"], fontSize=7.8, leading=9.6, spaceAfter=0))
     styles.add(ParagraphStyle(name="TitreFR", fontName="Helvetica-Bold", fontSize=15, leading=18, alignment=TA_CENTER, spaceAfter=4))
     styles.add(ParagraphStyle(name="SousTitreFR", parent=styles["BodyFR"], alignment=TA_CENTER, textColor=colors.HexColor("#4d5563"), spaceAfter=6))
     styles.add(ParagraphStyle(name="H2FR", fontName="Helvetica-Bold", fontSize=10.5, leading=13, spaceBefore=5, spaceAfter=3, keepWithNext=1,
@@ -60,151 +74,175 @@ def generate_report(data_dir, output, stack_path, final=False):
     def heading(text):
         story.append(Paragraph(text, styles["H2FR"]))
 
+    def cellule(text, gras=False):
+        return Paragraph(f"<b>{text}</b>" if gras else text, styles["CelluleFR"])
+
+    def tableau(lignes, largeurs, gras_ligne=None):
+        t = Table(lignes, colWidths=[w * cm for w in largeurs], repeatRows=1)
+        style = [
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#dce7f3")),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("GRID", (0, 0), (-1, -1), 0.4, colors.lightgrey),
+            ("TOPPADDING", (0, 0), (-1, -1), 2.5), ("BOTTOMPADDING", (0, 0), (-1, -1), 2.5),
+        ]
+        if gras_ligne is not None:
+            style.append(("BACKGROUND", (0, gras_ligne), (-1, gras_ligne), colors.HexColor("#f3f7fc")))
+        t.setStyle(TableStyle(style))
+        story.append(t)
+        story.append(Spacer(1, 4))
+
     nb_ent = f"{run['entreprises']:,}".replace(",", " ") if run else "5 250"
+    nb_ctl = modele.get("nb_exemples", 276)
     story.append(Paragraph("BASIRA — Note de synthèse", styles["TitreFR"]))
     story.append(Paragraph(
-        "Défi principal <b>T20 — Risk scoring dynamique de la conformité des entreprises</b> · défi complémentaire T7 "
-        "(croisement des données fiscales, douanières et de paiement). Hackathon « IA &amp; Finances publiques », septembre 2026."
+        "Défi principal <b>T20 : score de risque dynamique de la conformité des entreprises</b>. Défi complémentaire T7 : "
+        "croisement des données fiscales, douanières et financières. Hackathon « IA &amp; Finances publiques », septembre 2026."
         + (f"<br/>Code source : <link href=\"{escape(stack['depot'])}\" color=\"#174a7e\">{escape(stack['depot'])}</link>" if stack.get("depot") else ""),
         styles["SousTitreFR"]))
     if not final:
-        paragraph("<b>Version de travail.</b> Les résultats d'impact et l'inventaire final restent à compléter s'ils ne sont pas "
-                  "fournis. Aucun chiffre d'exemple du contrat n'est présenté comme un résultat mesuré.")
+        paragraph("<b>Version de travail.</b> Les résultats et l'inventaire final restent à compléter. "
+                  "Aucun chiffre d'exemple n'est présenté comme un résultat mesuré.")
 
-    heading("1. Problème traité")
+    heading("1. Le défi")
     paragraph(
-        "Les informations utiles au contrôle existent déjà mais restent en silos : déclarations fiscales, douane (SINDA), "
-        "paiements publics (ADEB), annexes de l'employeur. La sélection des contrôles repose sur des règles statiques qui "
-        "favorisent les grandes entreprises et les secteurs « classiques », pour une couverture de l'ordre de 2,5 % des "
-        "contribuables. <b>Basira</b> classe chaque mois tout le portefeuille par <b>risque × enjeu</b>, explique chaque score "
-        "par des faits chiffrés et les pièces sources, et laisse la décision à l'inspecteur : aucune sanction n'est automatique."
-    )
-
-    heading("2. Données utilisées")
-    paragraph(
-        f"Données <b>entièrement synthétiques</b> (aucune donnée réelle) : {nb_ent} entreprises sur 24 mois (2024-09 → 2026-08), "
-        "au format du dossier fiscal, de la déclaration mensuelle, des annexes I, II et V, des déclarations et liquidations "
-        "douanières, des paiements ADEB et des contrôles passés. Le générateur injecte 7 schémas de fraude (minoration du CA, "
-        "réseaux de fausses factures, sous-évaluation en douane, recettes publiques non déclarées, dormante réactivée, compression "
-        "de marge, sociétés coquilles) et des témoins trompeurs (croissance légitime, citoyens modèles, sosies sans fraude). "
-        "La vérité terrain n'est lue que par l'évaluation, jamais par l'entraînement ni pour fixer un seuil. Un calcul à fin M "
-        "ne lit que ce qui était disponible à cette date (déclaration de M connue en M+1, annexes de l'exercice N en mars N+1)."
+        "L'administration dispose déjà de nombreuses informations sur les entreprises, mais elles sont réparties entre plusieurs "
+        "systèmes : les déclarations fiscales, la douane (SINDA), les paiements de l'État aux entreprises (ADEB) et les annexes de "
+        "l'employeur, où chaque entreprise déclare ce qu'elle a payé à ses fournisseurs. Les contrôles sont aujourd'hui choisis par "
+        "des règles fixes, qui visent surtout les grandes entreprises. Or la fraude se voit souvent en comparant ces sources entre "
+        "elles. Par exemple, une entreprise qui importe trois fois plus sans que son chiffre d'affaires déclaré augmente."
     )
     paragraph(
-        "<b>Conformité (loi organique n° 2004-63, INPDP).</b> Aucune donnée réelle, personnelle ou confidentielle n'est utilisée ni "
-        "requise, et aucun système de l'administration n'est sollicité : identifiants, raisons sociales et montants sont fictifs. "
-        "Les données et l'assistant restent sur le réseau local ; aucune donnée n'est envoyée à un service en ligne."
+        "<b>Basira</b> attribue chaque mois à chaque entreprise un <b>score de risque de 0 à 100</b>, estime le montant d'impôt en jeu "
+        "et propose la liste des entreprises à contrôler en priorité. Chaque score est expliqué par des faits chiffrés et par les "
+        "pièces qui les prouvent. L'inspecteur garde toujours la décision."
     )
 
-    heading("3. Approche IA")
-    puce(
-        "<b>16 signaux explicables</b>, 4 lentilles : <i>cohérence</i> entre sources indépendantes (imports ou paiements reçus vs CA "
-        "déclaré, TVA import, prix de référence en douane), <i>changement</i> (EWMA sur l'historique propre), <i>pairs</i> (écart robuste "
-        "médiane/MAD, distance de Mahalanobis régularisée par secteur × taille), <i>réseau</i> (fournisseurs partagés, coquilles, "
-        "proximité d'entreprises redressées). Statistiques déterministes ; chaque signal actif porte un fait en français et "
-        "jusqu'à 50 pièces sources."
+    heading("2. Les données")
+    paragraph(
+        f"Aucune donnée réelle n'a été fournie ni utilisée. Nous avons généré des données fictives réalistes, au format des "
+        f"documents officiels : <b>{nb_ent} entreprises suivies sur 24 mois</b> (septembre 2024 à août 2026), avec leurs déclarations "
+        f"fiscales, leurs importations, les paiements publics reçus, ce que leurs clients déclarent leur avoir payé, et les résultats "
+        f"de {nb_ctl} contrôles passés. Nous y avons caché 7 types de fraude connus (chiffre d'affaires minoré, fausses factures, "
+        "sous-évaluation en douane, sociétés écrans…), ainsi que des entreprises honnêtes au comportement trompeur, comme une forte "
+        "croissance correctement déclarée. La liste des vraies fraudes reste cachée. Elle sert uniquement à mesurer les résultats, "
+        "jamais à entraîner le modèle. Chaque calcul n'utilise que les informations disponibles à la date concernée."
     )
-    nb_ex, nb_pos = modele.get("nb_exemples", "?"), modele.get("nb_positifs", "?")
+    paragraph(
+        "<b>Conformité (loi organique n° 2004-63, INPDP).</b> Aucune donnée personnelle ou confidentielle n'est utilisée, et aucun "
+        "système de l'administration n'est sollicité. Les identifiants, les noms et les montants sont fictifs. Les données et "
+        "l'assistant restent sur le réseau local, et rien n'est envoyé à un service en ligne."
+    )
+
+    heading("3. L'approche IA, en trois étapes")
     puce(
-        f"<b>Score appris</b> : régression logistique L2 sur {nb_ex} contrôles passés ({nb_pos} redressements), caractéristiques au "
-        "mois précédant l'avis, poids ≥ 0 (un signal d'alerte ne baisse jamais le risque). Les signaux jamais observés en "
-        "contrôle ou à coefficient négatif — effet du biais de sélection de la règle statique — reçoivent un poids a priori "
-        "(médiane des poids appris). Échelle fixée par la capacité de contrôle (1 % des couples entreprise × mois ≥ 70) ; un "
-        "écart très marqué entre deux sources indépendantes suffit à rendre l'entreprise prioritaire ; plafond 99. Chaque point "
-        "est attribué à un signal (somme des points = score − score de base) : l'explication est exacte par construction."
+        "<b>Détecter.</b> Basira calcule 16 indicateurs d'alerte pour chaque entreprise et chaque mois. Ils comparent ce que "
+        "l'entreprise déclare avec ce que les autres administrations observent, avec son propre passé et avec les entreprises du "
+        "même secteur et de même taille. D'autres repèrent les liens suspects entre entreprises, comme des fournisseurs communs "
+        "apparus en même temps ou des sociétés écrans. Chaque alerte est accompagnée d'une phrase explicative et des pièces qui la justifient."
     )
     puce(
-        "<b>Priorité</b> = score × enjeu (droits éludés reconstitués à partir des écarts entre sources). Segments PRIORITAIRE, "
-        "SURVEILLANCE, NORMAL et CONFIANCE (voie de facilitation) ; action suggérée (demande d'information, vérification, "
-        "signalement à la douane)."
+        f"<b>Évaluer le risque.</b> Un modèle d'apprentissage automatique (régression logistique) apprend, à partir des {nb_ctl} "
+        "contrôles passés, l'importance de chaque indicateur. Il produit un score de 0 à 100 que l'on peut décomposer : chaque point "
+        "du score est rattaché à un indicateur précis. On sait donc toujours pourquoi une entreprise est jugée risquée. Le score est "
+        "ensuite combiné au montant estimé en jeu pour classer les entreprises à contrôler."
     )
     puce(
-        "<b>Assistant</b> : Qwen 3.5 9B hébergé en local, 6 outils (dossier, preuves, réseau, lettre de demande d'information, "
-        "liens d'une contrepartie, chemin vers une entreprise redressée). Les outils de réseau mettent à jour le graphe de l'écran "
-        "en direct, avant la réponse écrite ; le graphe ne montre que des relations déclarées. Tout chiffre de la réponse doit "
-        "provenir des outils, sinon Basira renvoie une réponse déterministe ; l'assistant ne décide jamais."
+        "<b>Assister l'inspecteur.</b> Un assistant conversationnel, le modèle de langage Qwen installé en local, répond aux questions "
+        "de l'inspecteur à partir des seules données du dossier. Il peut par exemple remonter une chaîne de fournisseurs jusqu'à une "
+        "entreprise déjà sanctionnée et l'afficher en direct sur le graphe des relations, ou rédiger une demande d'information. "
+        "Si une réponse contient un chiffre absent des données, elle est bloquée et remplacée par une réponse préparée à l'avance. "
+        "L'assistant ne prend aucune décision."
     )
     k = boucle.get("decisions_ajoutees") if boucle else None
-    puce(
-        "<b>Prototype</b> : application web de l'inspecteur (liste priorisée, fiche « Pourquoi ce score ? » avec pièces sources, "
-        "graphe du réseau déployable de proche en proche, copilote, décision motivée et journalisée). Les décisions deviennent de "
-        "nouveaux exemples étiquetés : <b>boucle d'apprentissage</b>"
-        + (f" (simulation avant/après sur {k} décisions, sans réentraînement en direct)." if k else ".")
+    paragraph(
+        "<b>Le prototype</b> est une application web : liste des entreprises classées par priorité, fiche de chaque entreprise avec "
+        "l'explication de son score et les pièces, graphe de ses relations, assistant et formulaire de décision motivée. Les décisions "
+        "des inspecteurs deviennent de nouveaux exemples pour réentraîner le modèle"
+        + (f", ce que nous avons simulé sur {k} décisions." if k else ".")
     )
 
-    heading("4. Résultats (données synthétiques)")
+    heading("4. Les résultats")
     if evaluation:
+        n = evaluation.get("top_n", 50)
+        m = {x["nom"]: x for x in evaluation.get("methodes", [])}
+        b, r, h = m.get("Basira", {}), m.get("Règle statique (type SAR)", {}), m.get("Sélection aléatoire", {})
         paragraph(
-            f"Chaque mois de la période de test ({escape(str(evaluation.get('periode_test', '?')))}), chaque méthode choisit "
-            f"{evaluation.get('top_n', '?')} entreprises à contrôler. Moyennes mensuelles :"
+            f"<b>Comment nous avons mesuré.</b> Nous avons rejoué une année de contrôles, de septembre 2025 à août 2026. Chaque mois, "
+            f"trois méthodes choisissent chacune <b>{n} entreprises à contrôler</b> parmi les {nb_ent}, ce qui correspond à une capacité "
+            "de contrôle réaliste : Basira, une règle fixe proche des pratiques actuelles (elle privilégie les grandes entreprises et "
+            "quelques indicateurs classiques), et un tirage au hasard. On compare ensuite leurs choix à la liste cachée des vraies fraudes. "
+            "Les chiffres sont des moyennes sur les 12 mois."
         )
-        rows = [["Méthode", "Fraudes dans la sélection", "Droits éludés / contrôle", "Croissances légitimes retenues"]]
-        for m in evaluation.get("methodes", []):
-            rows.append([m["nom"], _pct(m["taux_detection_top_n"]), _dt(m["montant_moyen_par_controle"]),
-                         str(m["fausses_alertes_croissance_legitime"]).replace(".", ",")])
-        table = Table(rows, colWidths=[5.2 * cm, 3.8 * cm, 3.8 * cm, 4.8 * cm], repeatRows=1)
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#dce7f3")),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTNAME", (0, 1), (-1, 1), "Helvetica-Bold"),
-            ("FONTSIZE", (0, 0), (-1, -1), 8),
-            ("ALIGN", (1, 0), (-1, -1), "CENTER"),
-            ("GRID", (0, 0), (-1, -1), 0.4, colors.lightgrey),
-            ("TOPPADDING", (0, 0), (-1, -1), 2), ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
-        ]))
-        story.append(table)
-        story.append(Spacer(1, 4))
+        lignes = [[cellule("Méthode de sélection", True), cellule("Part des entreprises choisies qui fraudent réellement", True),
+                   cellule("Montant éludé retrouvé en moyenne par contrôle", True),
+                   cellule("Entreprises honnêtes en forte croissance choisies à tort, par mois", True)]]
+        for nom in ("Basira", "Règle statique (type SAR)", "Sélection aléatoire"):
+            if nom in m:
+                x = m[nom]
+                gras = nom == "Basira"
+                lignes.append([cellule(NOMS_METHODES[nom], gras), cellule(_pct(x["taux_detection_top_n"]), gras),
+                               cellule(_dt(x["montant_moyen_par_controle"]), gras), cellule(_nb(x["fausses_alertes_croissance_legitime"]), gras)])
+        tableau(lignes, [5.0, 4.0, 4.1, 4.7], gras_ligne=1)
+        if b and r and h:
+            vrais = lambda x: _nb(round(x["taux_detection_top_n"] * n, 1)).replace(",0", "")  # noqa: E731  moyenne mensuelle
+            facteur = b["montant_moyen_par_controle"] / max(r["montant_moyen_par_controle"], 1)
+            paragraph(
+                f"<b>Lecture.</b> Sur les {n} entreprises proposées chaque mois par Basira, {vrais(b)} en moyenne fraudent réellement "
+                f"({_pct(b['taux_detection_top_n'])}), contre {vrais(r)} avec la règle fixe et {vrais(h)} avec un tirage au hasard. "
+                f"Chaque contrôle proposé par Basira porte en moyenne sur {_dt(b['montant_moyen_par_controle'])} d'impôt éludé, "
+                f"soit {facteur:.0f} fois plus qu'avec la règle fixe. Basira écarte aussi beaucoup mieux les entreprises honnêtes en forte "
+                f"croissance ({_nb(b['fausses_alertes_croissance_legitime'])} par mois contre {_nb(r['fausses_alertes_croissance_legitime'])})."
+            )
         v = evaluation.get("validation_modele", {})
         if v:
             paragraph(
-                f"En 2026-08, {v['prioritaires_mois_courant']} entreprises sont PRIORITAIRE, dont "
-                f"<b>{_pct(v['precision_prioritaires_mois_courant'])} de fraudes actives</b>. Robustesse : un modèle entraîné "
-                f"uniquement sur les {v['nb_controles_avant_periode_test']} contrôles antérieurs à la période de test garde "
-                f"{_pct(v['detection_top_n_modele_sans_controles_periode_test'])} de fraudes dans sa sélection."
+                f"En août 2026, {v['prioritaires_mois_courant']} entreprises sur {nb_ent} sont classées prioritaires, et "
+                f"{_pct(v['precision_prioritaires_mois_courant'])} d'entre elles fraudent réellement. Le résultat ne dépend pas des "
+                f"contrôles utilisés pour l'apprentissage : un modèle entraîné uniquement sur les contrôles antérieurs à l'année de test "
+                f"obtient le même taux ({_pct(v['detection_top_n_modele_sans_controles_periode_test'])})."
             )
     else:
-        paragraph(
-            "<b>Impact non encore mesuré :</b> data/scores/evaluation.json de C est absent. La comparaison avec une règle statique "
-            "et le hasard sera reprise automatiquement de ce fichier. Aucun gain chiffré n'est revendiqué."
-        )
+        paragraph("<b>Résultats non encore mesurés.</b> Le fichier d'évaluation est absent. Aucun gain chiffré n'est revendiqué.")
 
-    heading("5. Limites identifiées")
-    puce("Les données et les signaux sont conçus à partir de la même spécification : ces résultats montrent la faisabilité et "
-         "l'intérêt du croisement des sources, pas l'efficacité en production.")
+    heading("5. Les limites")
+    puce("Les données sont fictives et ont été conçues en même temps que les indicateurs. Les résultats montrent que l'approche "
+         "fonctionne et que le croisement des sources est utile, mais pas son efficacité sur des données réelles.")
     if evaluation and evaluation.get("validation_modele"):
         v = evaluation["validation_modele"]
         det = evaluation.get("details", {}).get("Basira", {})
-        basira = next((m for m in evaluation.get("methodes", []) if m["nom"] == "Basira"), {})
         sc = v.get("part_prioritaire_par_scenario", {})
-        puce(f"Avec {v['nb_controles']} contrôles passés, rares, bruités et biaisés par leur sélection, les poids appris ne font pas "
-             f"mieux que des poids égaux (AUC en validation croisée {str(v['auc_validation_croisee_poids_appris']).replace('.', ',')} "
-             f"contre {str(v['auc_validation_croisee_poids_egaux']).replace('.', ',')} ; sélection {_pct(basira.get('taux_detection_top_n', 0))} "
-             f"contre {_pct(v['detection_top_n_poids_egaux'])}). La performance vient du croisement des sources ; l'apprentissage "
-             "prendra son sens avec les décisions des inspecteurs.")
-        puce(f"Pas d'avance de détection mesurée sur la règle statique ({str(basira.get('avance_detection_mois')).replace('.', ',')} mois) ; "
-             f"une fraude entre dans la sélection {str(det.get('delai_moyen_detection_mois', '?')).replace('.', ',')} mois après son début "
-             f"en moyenne, et {det.get('entreprises_frauduleuses_detectees', '?')} fraudes sur {det.get('sur', '?')} y entrent au moins une fois.")
+        puce(f"Avec seulement {v['nb_controles']} contrôles passés, le modèle appris ne fait pas mieux qu'une simple moyenne des "
+             f"indicateurs ({_pct(evaluation['methodes'][0]['taux_detection_top_n'])} contre {_pct(v['detection_top_n_poids_egaux'])}). "
+             "Le gain vient surtout du croisement des sources. L'apprentissage deviendra utile avec les décisions des inspecteurs.")
+        puce(f"Basira ne repère pas les fraudes plus tôt que la règle fixe. Une fraude est proposée au contrôle "
+             f"{_nb(det.get('delai_moyen_detection_mois', '?'))} mois après son début, en moyenne.")
         if {"E", "F", "CROISSANCE_LEGITIME"} <= set(sc):
-            puce(f"Schémas mal couverts : dormante réactivée ({_pct(sc['E']['part'])} PRIORITAIRE), compression de marge "
-                 f"({_pct(sc['F']['part'])}) ; {_pct(sc['CROISSANCE_LEGITIME']['part'])} des croissances légitimes sont PRIORITAIRE.")
-    puce("L'enjeu est une estimation (données annuelles, double compte possible clients/ADEB, taux de prototype à valider). "
-         "Le référentiel d'activités n'est pas unifié entre administrations ; SAR et SADEC 2 ne sont connus que par la conférence.")
+            puce(f"Deux types de fraude sont mal détectés : l'entreprise dormante qui reprend soudain une activité "
+                 f"({_pct(sc['E']['part'])} classées prioritaires) et la marge qui se réduit progressivement ({_pct(sc['F']['part'])}). "
+                 f"Par ailleurs, {_pct(sc['CROISSANCE_LEGITIME']['part'])} des entreprises honnêtes en forte croissance sont classées "
+                 "prioritaires à tort.")
+    puce("Le montant en jeu est une estimation, fondée en partie sur des données annuelles, et ses taux doivent être validés avec "
+         "les inspecteurs.")
 
-    heading("6. Modèles, bibliothèques, API tierces et ressources citées")
-    for model in stack.get("models", []):
-        puce(escape(f"{model['owner']} — {model['name']} ; pré-entraîné : {'oui' if model['pretrained'] else 'non'} ; {model['status']}."))
-    paragraph(escape(" · ".join(f"{owner} : {', '.join(libs)}" for owner, libs in stack.get("libraries", {}).items()))
-              + ". Aucune API externe ni service en ligne : tout fonctionne hors connexion.")
-    if stack.get("ressources_externes"):
-        paragraph("<b>Code et ressources externes cités :</b> " + escape(" ; ".join(stack["ressources_externes"])) + ".")
+    heading("6. Modèles, bibliothèques et ressources utilisés")
+    composants = stack.get("composants", [])
+    if composants:
+        lignes = [[cellule("Élément", True), cellule("Rôle dans Basira", True), cellule("Nature", True)]]
+        for c in composants:
+            lignes.append([cellule(escape(c["element"])), cellule(escape(c["usage"])), cellule(escape(c["type"]))])
+        tableau(lignes, [6.0, 7.0, 4.8])
+    paragraph("Aucune API externe ni aucun service en ligne n'est utilisé : tout fonctionne hors connexion. "
+              + escape(stack.get("precision_versions", "")))
 
     heading("7. Recommandations pour une mise en production")
     paragraph(
-        "Brancher les sources au data lake SADEC 2 et à SINDA en conservant les dates de disponibilité ; unifier identifiants et "
-        "référentiel d'activités ; valider les signaux et l'enjeu avec les métiers. Héberger données et assistant dans le périmètre "
-        "de l'administration, avec habilitations, journalisation et minimisation ; avant tout traitement de données réelles, analyse "
-        "d'impact et formalités auprès de l'INPDP (loi organique n° 2004-63). Réentraîner sur les "
-        "résultats réels et les décisions des inspecteurs, suivre les biais par secteur, taille et région, et garder la décision humaine."
+        "Relier Basira aux systèmes réels, notamment le lac de données SADEC 2 et SINDA, en conservant la date à laquelle chaque "
+        "information devient disponible. Unifier les identifiants et le référentiel des activités entre administrations. Valider les "
+        "indicateurs et l'estimation des montants avec les inspecteurs. Héberger les données et l'assistant au sein de "
+        "l'administration, avec une gestion des droits d'accès et la traçabilité des consultations. Avant tout usage de données "
+        "réelles, réaliser une analyse d'impact et accomplir les formalités auprès de l'INPDP (loi organique n° 2004-63). Enfin, "
+        "réentraîner régulièrement le modèle avec les résultats réels des contrôles, surveiller les écarts de traitement selon le "
+        "secteur, la taille et la région, et garder la décision humaine."
     )
 
     def footer(canvas, doc):
