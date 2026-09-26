@@ -160,12 +160,12 @@ Protocole : période de test = les 12 derniers mois (septembre 2025 → août 20
 
 ## 6. Pipeline technique
 
-**Architecture complète** (source éditable : [`docs/architecture.drawio`](docs/architecture.drawio), à ouvrir avec
-[diagrams.net](https://app.diagrams.net) ou l'extension draw.io de VS Code ; régénérable par `tools/architecture_drawio.py`) :
+**Architecture générale** (source éditable : [`docs/architecture.drawio`](docs/architecture.drawio), à ouvrir avec
+[diagrams.net](https://app.diagrams.net) ou l'extension draw.io de VS Code) :
 
-![Architecture complète de Basira](docs/captures/architecture.png)
+![Architecture générale de Basira](docs/captures/architecture.png)
 
-**Vue simplifiée du pipeline :**
+**Pipeline détaillé :**
 
 ![Pipeline technique de Basira](docs/captures/07_pipeline.png)
 
