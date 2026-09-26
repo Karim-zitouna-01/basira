@@ -141,6 +141,14 @@ def front_portefeuille():
     return _front().portefeuille()
 
 
+@app.get("/api/front/voisins/{ident}")
+def front_voisins(ident: str, limite: int = Query(8, ge=1, le=20)):
+    try:
+        return _front().voisins(ident, limite)
+    except (KeyError, Introuvable) as e:
+        _introuvable(e)
+
+
 @app.get("/api/front/entreprises/{mf}")
 def front_fiche(mf: str):
     try:

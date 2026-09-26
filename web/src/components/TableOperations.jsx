@@ -1,13 +1,13 @@
 // Opérations de la sélection : recherche, filtre « signalées », tri et pagination sur les pièces sources.
 import { useEffect, useMemo, useState } from "react";
-import { Badge, Group, Pagination, SegmentedControl, Switch, Table, Text, TextInput, Tooltip } from "@mantine/core";
-import { AlertTriangle, Search } from "lucide-react";
+import { Alert, Badge, Button, CloseButton, Group, Pagination, SegmentedControl, Switch, Table, Text, TextInput, Tooltip } from "@mantine/core";
+import { AlertTriangle, Filter as FilterIcon, Search } from "lucide-react";
 import { fmtCompact, fmtDT, fmtDate } from "../lib/format.js";
 
 const PAR_PAGE = 12;
 const COULEURS_SOURCE = { SINDA: "#3569b5", ADEB: "#b8862b", "ANNEXE V": "#2ba5a0", TJ: "#2ba5a0", RAFIK: "#4d5563" };
 
-export default function TableOperations({ lignes, total }) {
+export default function TableOperations({ lignes, total, filtres = [], onRetirer, onToutEffacer }) {
   const [q, setQ] = useState("");
   const [signalees, setSignalees] = useState(false);
   const [tri, setTri] = useState("date");
@@ -29,6 +29,19 @@ export default function TableOperations({ lignes, total }) {
 
   return (
     <div className="flex flex-col gap-3">
+      {/* Filtres venus du reste de la fiche (période, système, contrepartie cliquée dans le graphe) : visibles ici */}
+      {filtres.length > 0 && (
+        <Alert variant="light" color="basira" p="xs" icon={<FilterIcon size={15} />}
+          title={<Text size="sm" fw={600}>Liste filtrée : {filtres.length} filtre{filtres.length > 1 ? "s" : ""} actif{filtres.length > 1 ? "s" : ""}</Text>}>
+          <Group gap={6} mt={2}>
+            {filtres.map(([cle, texte]) => (
+              <Badge key={cle} variant="white" size="lg" fw={500} radius="xl" className="normal-case"
+                rightSection={<CloseButton size="xs" onClick={() => onRetirer?.(cle)} aria-label={`Retirer le filtre ${texte}`} />}>{texte}</Badge>
+            ))}
+            {filtres.length > 1 && <Button variant="subtle" size="compact-xs" onClick={onToutEffacer}>Tout retirer</Button>}
+          </Group>
+        </Alert>
+      )}
       <Group gap="xs" wrap="wrap">
         <TextInput size="xs" className="min-w-[200px] flex-1" value={q} onChange={(e) => setQ(e.currentTarget.value)}
           placeholder="Contrepartie, référence, pays…" leftSection={<Search size={13} />} aria-label="Rechercher une opération" />

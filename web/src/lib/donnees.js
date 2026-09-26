@@ -58,6 +58,7 @@ export function entreprisesLiees(idContrepartie, sauf) {
 }
 
 // Routes du contrat §6 (mode API uniquement)
+export const chargerVoisins = (id) => requete(`/api/front/voisins/${encodeURIComponent(id)}`);
 export const chargerPreuves = (mf, signal) => requete(`/api/entreprises/${mf}/preuves?signal=${encodeURIComponent(signal)}`);
 export const enregistrerDecision = (mf, corps) =>
   requete(`/api/entreprises/${mf}/decision`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corps) });

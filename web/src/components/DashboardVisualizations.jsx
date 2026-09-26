@@ -23,9 +23,9 @@ const auMois = (m) => new Date(`${m}-01T00:00:00`);
 const versIso = d3.timeFormat("%Y-%m");
 const signe = (v) => (v >= 0 ? "+" : "");
 
-function Carte({ titre, icone: Icone, aide, actions, children, className = "" }) {
+function Carte({ titre, icone: Icone, aide, actions, children, className = "", id }) {
   return (
-    <Card component="section" className={`flex min-w-0 flex-col gap-2 ${className}`}>
+    <Card component="section" id={id} className={`flex min-w-0 flex-col gap-2 scroll-mt-4 ${className}`}>
       <Group justify="space-between" gap="xs" wrap="wrap">
         <Group gap={8} wrap="nowrap">
           {Icone && <ThemeIcon variant="light" color="ardoise" size={28} radius="md"><Icone size={15} /></ThemeIcon>}
@@ -388,9 +388,11 @@ export default function DashboardVisualizations({ entreprise, palette, periode, 
       </Carte>
 
       <div className="grid gap-4 @2xl:grid-cols-3">
-        <Carte titre="Opérations de la sélection" icone={ListChecks} className="@2xl:col-span-2"
+        <Carte id="operations" titre="Opérations de la sélection" icone={ListChecks} className="@2xl:col-span-2"
           aide="Chaque ligne est une pièce source : déclaration en douane (SINDA), paiement public (ADEB) ou ligne d'annexe V déclarée par un client ou par l'entreprise. Les filtres du haut (période, système, contrepartie) s'appliquent ici.">
-          <TableOperations lignes={ops.lignes} total={ops.total} />
+          <TableOperations lignes={ops.lignes} total={ops.total} filtres={[...(kpis?.periode && periode ? [["periode", `Période : ${fmtMoisIso(kpis.periode.debut)} → ${fmtMoisIso(kpis.periode.fin)}`]] : []), ...pastilles]}
+            onRetirer={(cle) => (cle === "periode" ? onPeriode?.(null) : retirerFiltre(cle))}
+            onToutEffacer={() => { a.systemes?.filterAll(); a.contreparties?.filterAll(); if (a.groupe) dc.redrawAll(a.groupe); if (periode) onPeriode?.(null); }} />
         </Carte>
         <Carte titre="Historique" icone={History}>
           <ol className="flex flex-col gap-3">

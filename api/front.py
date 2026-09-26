@@ -300,7 +300,10 @@ class FrontStore:
                  ("ACHAT_LOCAL_A5", False): ("Client", "Vente · annexe V"),
                  ("HONORAIRES_A2", True): ("Prestataire", "Honoraires"),
                  ("HONORAIRES_A2", False): ("Client (honoraires)", "Honoraires reçus"),
-                 ("PAIEMENT_PUBLIC", False): ("Acheteur public", "Paiement public")}
+                 ("PAIEMENT_PUBLIC", False): ("Acheteur public", "Paiement public"),
+                 # vus depuis un fournisseur étranger ou un acheteur public (graphe déployé)
+                 ("IMPORT_FOURNISSEUR", False): ("Importateur", "Import"),
+                 ("PAIEMENT_PUBLIC", True): ("Entreprise payée", "Paiement public")}
 
     def _reseau(self, mf, max_contreparties: int = 40, max_liees: int = 4):
         """Contreparties (flux sur la fenêtre) : `sens` = sortant si l'entreprise paie la contrepartie, entrant sinon."""
@@ -349,3 +352,17 @@ class FrontStore:
                   "relations_anciennes": anciennes,
                   "sources": "annexe V (achats déclarés, exercice 2025), douane (SINDA), ADEB, annexe II (honoraires)"}
         return noeuds, liens, resume
+
+    def voisins(self, ident: str, limite: int = 8) -> dict:
+        """Réseau d'un nœud quelconque (entreprise, fournisseur étranger, acheteur public) pour « déployer » le graphe :
+        contreparties signalées d'abord, puis les plus gros flux ; chacune avec son motif détaillé."""
+        s = self.s
+        if ident not in s.identites and ident not in s.noms_fe and ident not in s.noms_ap:
+            raise KeyError(ident)
+        noeuds, liens, resume = self._reseau(ident, max_contreparties=limite)
+        for n in noeuds:
+            n["liees"] = liens.get(n["id"], [])
+        r = s.scores.get((ident, self.mois))
+        return {"id": ident, "nom": s.noms.get(ident) or s.noms_fe.get(ident) or s.noms_ap.get(ident) or ident,
+                "segment": r["segment"] if r else None, "score": round(r["score"]) if r else None,
+                "noeuds": noeuds, "total": resume["relations_fenetre"]}
